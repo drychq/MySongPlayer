@@ -5,7 +5,8 @@ project(MySongPlayer VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.2 COMPONENTS Quick Multimedia REQUIRED)
+find_package(Qt6 6.8 COMPONENTS Quick Multimedia REQUIRED)
+
 
 qt_add_executable(appMySongPlayer
     main.cpp
@@ -16,7 +17,7 @@ qt_add_qml_module(appMySongPlayer
     URI SongPlayer
     VERSION 1.0
     QML_FILES
-    main.qml
+        Main.qml
     AudioInfoBox.qml
     ImageButton.qml
     PlaylistPanel.qml

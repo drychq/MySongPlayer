@@ -12,7 +12,7 @@ Rectangle {
 
   opacity: enabled ? 1 : 0.6
 
-  TextInput {
+  TextField {
     id: searchInput
 
     anchors.fill: parent

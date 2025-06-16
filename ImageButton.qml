@@ -1,23 +1,24 @@
 import QtQuick
 
 Image {
-  id: root
+    id: root
 
-  signal clicked
+        signal
+    clicked
 
-  opacity: buttonMouseArea.containsMouse ? 0.75 : 1
-  mipmap: true
-  fillMode: Image.PreserveAspectFit
+    opacity: buttonTapHandler.hovered ? 0.75 : 1
+    mipmap: true
+    fillMode: Image.PreserveAspectFit
 
-  MouseArea {
-    id: buttonMouseArea
-
-    anchors.fill: parent
-
-    hoverEnabled: true
-
-    onClicked: {
-      root.clicked()
+    HoverHandler {
+        id: buttonHoverHandler
     }
-  }
+
+    TapHandler {
+        id: buttonTapHandler
+
+        onTapped: {
+            root.clicked()
+        }
+    }
 }

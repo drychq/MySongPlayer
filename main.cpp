@@ -18,13 +18,13 @@ int main(int argc, char *argv[])
     AudioSearchModel *audioSearchModel = new AudioSearchModel(&app);
     qmlRegisterSingletonInstance("com.company.AudioSearchModel", 1, 0, "AudioSearchModel", audioSearchModel);
 
-    const QUrl url(u"qrc:/SongPlayer/main.qml"_qs);
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-                     &app, [url](QObject *obj, const QUrl &objUrl) {
-        if (!obj && url == objUrl)
-            QCoreApplication::exit(-1);
-    }, Qt::QueuedConnection);
-    engine.load(url);
+    QObject::connect(
+      &engine,
+      &QQmlApplicationEngine::objectCreationFailed,
+      &app,
+      []() { QCoreApplication::exit(-1); },
+      Qt::QueuedConnection);
+    engine.loadFromModule("SongPlayer", "Main");
 
     return app.exec();
 }

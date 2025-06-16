@@ -60,6 +60,7 @@ CMakeLists.txt.user*
 *.opensdf
 *.vcxproj
 *vcxproj.*
+*.idea
 
 # MinGW generated files
 *.Debug
@@ -81,7 +82,10 @@ CMakeLists.txt.user*
 .uic/
 /build*/
 
-#
+# Resources
 assets/images/*
 assets/videos/*
 assets/audio/*
+
+# Bash script
+*.sh
