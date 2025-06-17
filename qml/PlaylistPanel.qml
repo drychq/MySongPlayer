@@ -1,5 +1,5 @@
 import QtQuick
-import com.company.PlayerController
+import MySongPlayer
 
 Rectangle {
   id: root
@@ -100,12 +100,10 @@ Rectangle {
         }
       }
 
-      MouseArea {
-        id: delegateMouseArea
+      TapHandler {
+        id: delegateTapHander
 
-        anchors.fill: parent
-
-        onClicked: {
+        onTapped: {
           PlayerController.switchToAudioByIndex(delegate.index)
         }
       }
@@ -122,7 +120,7 @@ Rectangle {
         width: 30
         height: 30
 
-        source: "assets/icons/trash_icon.png"
+        source: "../assets/icons/trash_icon.png"
 
         onClicked: {
           PlayerController.removeAudio(delegate.index)
@@ -140,7 +138,7 @@ Rectangle {
       margins: 20
     }
 
-    source: "assets/icons/add_icon.png"
+    source: "../assets/icons/add_icon.png"
 
     width: 32
     height: 32

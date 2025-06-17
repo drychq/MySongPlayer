@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
-import com.company.PlayerController
-import com.company.AudioSearchModel
+
+import MySongPlayer
 
 Rectangle {
     id: root

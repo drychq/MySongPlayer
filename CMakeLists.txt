@@ -10,39 +10,49 @@ find_package(Qt6 6.8 COMPONENTS Quick Multimedia REQUIRED)
 
 qt_add_executable(appMySongPlayer
     main.cpp
-    PlayerController.h PlayerController.cpp
 )
 
 qt_add_qml_module(appMySongPlayer
-    URI SongPlayer
+    URI MySongPlayer
     VERSION 1.0
     QML_FILES
-        Main.qml
-    AudioInfoBox.qml
-    ImageButton.qml
-    PlaylistPanel.qml
-    SearchField.qml
-    SearchPanel.qml
+    qml/Main.qml
+    qml/AudioInfoBox.qml
+    qml/ImageButton.qml
+    qml/PlaylistPanel.qml
+    qml/SearchField.qml
+    qml/SearchPanel.qml
 
     SOURCES
     AudioInfo.cpp AudioInfo.h
     AudioSearchModel.cpp AudioSearchModel.h
+    PlayerController.h PlayerController.cpp
 
     RESOURCES
     assets/images/song_1.jpg
     assets/images/song_2.jpg
     assets/images/song_3.jpg
 
-    assets/icons/app_icon.ico
-    assets/icons/add_icon.png
-    assets/icons/menu_icon.png
     assets/icons/trash_icon.png
-    assets/icons/next_icon.png
+    assets/icons/search_icon.png
+    assets/icons/random_icon.png
+    assets/icons/repeat_icon.png
     assets/icons/previous_icon.png
     assets/icons/play_icon.png
     assets/icons/pause_icon.png
+    assets/icons/next_icon.png
+    assets/icons/mute_icon.png
+    assets/icons/menu_icon.png
+    assets/icons/medium_icon.png
+    assets/icons/low_icon.png
+    assets/icons/list_cycle_icon.png
+    assets/icons/import_icon.png
+    assets/icons/high_icon.png
     assets/icons/close_icon.png
-    assets/icons/search_icon.png
+    assets/icons/app_icon.png
+    assets/icons/app_icon.ico
+    assets/icons/add_icon.png
+
 
     assets/videos/video_1.avi
 
@@ -50,7 +60,8 @@ qt_add_qml_module(appMySongPlayer
     assets/audio/air_on_the_g_string.mp3
     assets/audio/eine_kleine_nachtmusik.mp3
     assets/audio/reprezentuje_biede.mp3
-    RESOURCES README.md
+
+    README.md
 )
 
 set_target_properties(appMySongPlayer PROPERTIES

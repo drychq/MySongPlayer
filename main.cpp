@@ -8,15 +8,9 @@ int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
 
-    app.setWindowIcon(QIcon(":/SongPlayer/assets/icons/app_icon.ico"));
+    app.setWindowIcon(QIcon(":/MySongPlayer/assets/icons/app_icon.ico"));
 
     QQmlApplicationEngine engine;
-
-    PlayerController *playerController = new PlayerController(&app);
-    qmlRegisterSingletonInstance("com.company.PlayerController", 1, 0, "PlayerController", playerController);
-
-    AudioSearchModel *audioSearchModel = new AudioSearchModel(&app);
-    qmlRegisterSingletonInstance("com.company.AudioSearchModel", 1, 0, "AudioSearchModel", audioSearchModel);
 
     QObject::connect(
       &engine,
@@ -24,7 +18,7 @@ int main(int argc, char *argv[])
       &app,
       []() { QCoreApplication::exit(-1); },
       Qt::QueuedConnection);
-    engine.loadFromModule("SongPlayer", "Main");
+    engine.loadFromModule("MySongPlayer", "Main");
 
     return app.exec();
 }

@@ -2,17 +2,29 @@
 
 #include <QMediaPlayer>
 #include <QAbstractListModel>
+#include <QtQml/qqmlregistration.h>
+#include <QGuiApplication>
+#include <QQmlEngine>
+#include <QJSEngine>
 
 class AudioInfo;
 
 class PlayerController : public QAbstractListModel
 {
     Q_OBJECT
+    QML_SINGLETON
+    QML_NAMED_ELEMENT(PlayerController)
 
     Q_PROPERTY(bool playing READ playing NOTIFY playingChanged)
     Q_PROPERTY(AudioInfo* currentSong READ currentSong WRITE setCurrentSong NOTIFY currentSongChanged)
 
 public:
+    static QObject* provider(QQmlEngine *engine, QJSEngine *scriptEngine) {
+        Q_UNUSED(engine); Q_UNUSED(scriptEngine);
+        auto controller = new PlayerController(QGuiApplication::instance());
+        return controller;
+    }
+
     enum Role {
         AudioTitleRole = Qt::UserRole + 1,
         AudioAuthorNameRole,

@@ -1,7 +1,7 @@
 import QtQuick
 import QtMultimedia
-import com.company.PlayerController
-import SongPlayer
+
+import MySongPlayer
 
 Item {
   id: root

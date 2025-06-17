@@ -2,15 +2,27 @@
 
 #include <QAbstractListModel>
 #include <QNetworkAccessManager>
+#include <QtQml/qqmlregistration.h>
+#include <QGuiApplication>
+#include <QQmlEngine>
+#include <QJSEngine>
 
 class AudioInfo;
 
 class AudioSearchModel : public QAbstractListModel
 {
     Q_OBJECT
+    QML_SINGLETON
+    QML_NAMED_ELEMENT(AudioSearchModel)
     Q_PROPERTY(bool isSearching READ isSearching NOTIFY isSearchingChanged)
 
 public:
+    static QObject* provider(QQmlEngine *engine, QJSEngine *scriptEngine) {
+        Q_UNUSED(engine); Q_UNUSED(scriptEngine);
+        auto model = new AudioSearchModel(QGuiApplication::instance());
+        return model;
+    }
+
     enum Role {
         AudioNameRole = Qt::UserRole + 1,
         AudioAuthorRole,

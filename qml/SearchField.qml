@@ -34,7 +34,7 @@ Rectangle {
       height: 16
 
       mipmap: true
-      source: "assets/icons/search_icon.png"
+      source: "../assets/icons/search_icon.png"
     }
 
     onAccepted: {
