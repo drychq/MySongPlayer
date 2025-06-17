@@ -50,6 +50,7 @@ qt_add_qml_module(appMySongPlayer
     assets/audio/air_on_the_g_string.mp3
     assets/audio/eine_kleine_nachtmusik.mp3
     assets/audio/reprezentuje_biede.mp3
+    RESOURCES README.md
 )
 
 set_target_properties(appMySongPlayer PROPERTIES
