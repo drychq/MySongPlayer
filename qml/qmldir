@@ -1,0 +1,2 @@
+module MySongPlayer
+singleton AppStyles 1.0 styles/AppStyles.qml

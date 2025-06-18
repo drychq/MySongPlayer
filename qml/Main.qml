@@ -1,185 +1,131 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Window
+import QtQuick.Dialogs
 import QtQuick.Layouts
-
+import QtCore
 import MySongPlayer
+import "layouts"
+import "panels"
+import "components/complex"
 
 ApplicationWindow {
     id: root
-
     width: 480
     height: 640
     visible: true
     title: "My Song Player"
 
-    ColumnLayout {
-        anchors.fill: parent
+    Item {
+        id: topContainer
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: AppStyles.topBarHeight
+        z: 1
 
-        Rectangle {
-            id: topbar
+        TopBar {
+            id: topBar
+            anchors.fill: parent
 
-            Layout.preferredHeight: 50
-            Layout.fillWidth: true
-            color: "#5F8575"
+            onPlaylistToggleRequested: {
+                playlistPanel.hidden = !playlistPanel.hidden
+            }
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 10
+            onShowAddOptionsRequested: {
+                addSongOptionsPopup.open()
+            }
 
-                SearchField {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 30
-                    Layout.alignment: Qt.AlignVCenter
+            onCloseSearchRequested: {
+                searchPanel.hidden = true
+                topBar.searchPanelHidden = true
+                // Clear search results and reset search mode
+                PlaylistSearchModel.clearSearch()
+                // Reset to local search mode
+                topBar.useNetworkSearch = false
+                searchPanel.searchMode = "local"
+            }
 
-                    visible: !searchPanel.hidden
-                    enabled: !AudioSearchModel.isSearching
-
-                    onAccepted: value => {
-                        AudioSearchModel.searchSong(value)
-                        topbar.forceActiveFocus()
-                    }
-                }
-
-                RowLayout {
-                    Layout.alignment: Qt.AlignRight
-
-                    ImageButton {
-                        id: playlistIcon
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.preferredWidth: 32
-                        Layout.preferredHeight: 32
-                        source: "../assets/icons/menu_icon.png"
-
-                        visible: searchPanel.hidden
-
-                        onClicked: {
-                            playlistPanel.hidden = !playlistPanel.hidden
-                        }
-                    }
-
-                    ImageButton {
-                        id: addAudioButton
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.preferredWidth: 32
-                        Layout.preferredHeight: 32
-                        source: "../assets/icons/add_icon.png"
-                    }
-                }
-                ImageButton {
-                    id: closeSearchButton
-
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.preferredWidth: 32
-                    Layout.preferredHeight: 32
-
-                    source: "../assets/icons/close_icon.png"
-                    visible: !searchPanel.hidden
-
-                    onClicked: {
-                        searchPanel.hidden = true
-                    }
-                }
+            onSearchResultsRequested: {
+                searchPanel.hidden = false
+                topBar.searchPanelHidden = false
             }
         }
 
-        Rectangle {
-            id: mainSection
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-
-            color: "#1e1e1e"
-
-            AudioInfoBox {
-                id: firstSong
-                anchors.centerIn: parent
-                width: parent.width - 40
+        PlaylistPanel {
+            id: playlistPanel
+            anchors {
+                top: topBar.bottom
             }
-        }
-
-        Rectangle {
-            id: bottomBar
-
-            Layout.fillWidth: true
-            Layout.preferredHeight: 100
-            color: "#333333"
-
-            RowLayout {
-                spacing: 20
-
-                enabled: !!PlayerController.currentSong
-                opacity: enabled ? 1 : 0.3
-
-                ImageButton {
-                    id: playModeButton
-
-                    Layout.alignment: Qt.AlignLeft
-                    Layout.preferredWidth: 30
-                    Layout.preferredHeight: 30
-
-                    source: "../assets/icons/list_cycle_icon.png"
-                }
-
-                RowLayout {
-
-
-                    ImageButton {
-                        id: previousButton
-
-                        Layout.preferredWidth: 30
-                        Layout.preferredHeight: 30
-
-                        source: "../assets/icons/previous_icon.png"
-
-                        onClicked: PlayerController.switchToPreviousSong()
-                    }
-
-                    ImageButton {
-                        id: playPauseButton
-
-                        Layout.preferredWidth: 50
-                        Layout.preferredHeight: 50
-
-                        source: PlayerController.playing ? "../assets/icons/pause_icon.png" : "../assets/icons/play_icon.png"
-                        onClicked: PlayerController.playPause()
-                    }
-
-                    ImageButton {
-                        id: nextButton
-
-                        Layout.preferredWidth: 30
-                        Layout.preferredHeight: 30
-
-                        source: "../assets/icons/next_icon.png"
-
-                        onClicked: PlayerController.switchToNextSong()
-                    }
-                }
-
-                ImageButton {
-                    id: volumeButton
-
-                    Layout.preferredWidth: 30
-                    Layout.preferredHeight: 30
-                    source: "../assets/icons/medium_icon.png"
-                }
+            x: hidden ? parent.width : parent.width - width
+            onPlaylistSearchRequested: {
+                topBar.searchPanelHidden = false
+                searchPanel.hidden = false
             }
         }
     }
 
-    PlaylistPanel {
-        id: playlistPanel
-        x: hidden ? parent.width : parent.width - width
-        onSearchRequested: {
-            searchPanel.hidden = false
+    ColumnLayout {
+        id: mainLayout
+        anchors.top: topContainer.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        spacing: 0
+
+        MainArea {
+            id: mainArea
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }
+
+        BottomBar {
+            id: bottomBar
+            Layout.fillWidth: true
+            Layout.preferredHeight: AppStyles.bottomBarHeight
         }
     }
 
     SearchPanel {
         id: searchPanel
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: mainSection.height + bottomBar.height
-        y: hidden ? parent.height : topbar.height
+        anchors {
+            left: parent.left
+            right: parent.right
+        }
+        height: mainArea.height + bottomBar.height
+        y: hidden ? parent.height : topContainer.height
+
+        onHiddenChanged: {
+            topBar.searchPanelHidden = hidden
+        }
+    }
+
+    AddSongOptionsPopup {
+        id: addSongOptionsPopup
+
+        onLocalImportRequested: {
+            close()
+            audioFileDialog.open()
+        }
+
+        onNetworkImportRequested: {
+            close()
+            // Activate network search mode
+            topBar.useNetworkSearch = true
+            searchPanel.searchMode = "network"
+            searchPanel.hidden = false
+            topBar.searchPanelHidden = false
+            console.log("Network import mode activated")
+        }
+    }
+
+    FileDialog {
+        id: audioFileDialog
+        title: "Select Audio Files"
+        fileMode: FileDialog.OpenFiles
+        nameFilters: ["Audio Files (*.mp3 *.wav *.ogg *.flac *.m4a)"]
+        currentFolder: StandardPaths.standardLocations(StandardPaths.MusicLocation)[0]
+        onAccepted: {
+            PlayerController.importLocalAudio(audioFileDialog.selectedFiles)
+        }
     }
 }

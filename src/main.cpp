@@ -1,8 +1,6 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QQmlApplicationEngine>
-#include "PlayerController.h"
-#include "AudioSearchModel.h"
 
 int main(int argc, char *argv[])
 {
