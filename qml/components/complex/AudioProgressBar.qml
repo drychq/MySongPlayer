@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Layouts
 import MySongPlayer
 
-import "../../utils/TimeUtils.js" as  TimeUtils
 import "../base"
 
 Item

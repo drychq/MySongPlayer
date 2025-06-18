@@ -1,2 +1,3 @@
 module MySongPlayer
 singleton AppStyles 1.0 styles/AppStyles.qml
+singleton TimeUtils 1.0 utils/TimeUtils.js
