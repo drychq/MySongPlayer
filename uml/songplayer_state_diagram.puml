@@ -1,0 +1,105 @@
+@startuml MySongPlayer项目状态图
+
+' 配置
+skinparam backgroundColor white
+skinparam defaultFontName Microsoft YaHei
+skinparam stateBorderColor #333
+skinparam stateBackgroundColor #f5f5f5
+skinparam stateArrowColor #666
+skinparam stateFontSize 14
+
+' 标题
+title MySongPlayer项目 - 状态图
+
+' 主状态机 - 播放控制状态
+state "播放控制状态" as PlayControl {
+    state "停止" as Stopped
+    state "播放中" as Playing
+    state "暂停" as Paused
+    
+    [*] --> Stopped
+    Stopped --> Playing : 播放/有可播放歌曲
+    Playing --> Paused : 暂停
+    Paused --> Playing : 恢复播放
+    Playing --> Stopped : 停止/播放完成
+    Paused --> Stopped : 停止
+    
+    ' 播放模式子状态
+    state "播放模式" as PlayMode {
+        state "列表循环" as Loop
+        state "随机播放" as Shuffle
+        state "单曲循环" as RepeatOne
+        
+        [*] --> Loop
+        Loop --> Shuffle : 切换模式
+        Shuffle --> RepeatOne : 切换模式
+        RepeatOne --> Loop : 切换模式
+    }
+}
+
+' 播放列表状态
+state "播放列表状态" as PlaylistState {
+    state "空列表" as EmptyPlaylist
+    state "有歌曲" as HasSongs
+    
+    [*] --> EmptyPlaylist
+    EmptyPlaylist --> HasSongs : 添加歌曲
+    HasSongs --> HasSongs : 添加/删除歌曲
+    HasSongs --> EmptyPlaylist : 清空列表/删除最后一首歌
+    
+    ' 持久化状态
+    state "持久化状态" as PersistenceState {
+        state "未保存" as Unsaved
+        state "已保存" as Saved
+        
+        [*] --> Unsaved
+        Unsaved --> Saved : 保存播放列表
+        Saved --> Unsaved : 修改播放列表
+    }
+}
+
+' 歌词显示状态
+state "歌词显示状态" as LyricsState {
+    state "无歌词" as NoLyrics
+    state "有歌词" as HasLyrics
+    state "显示信息" as ShowInfo
+    state "显示歌词" as ShowLyrics
+    
+    [*] --> NoLyrics
+    NoLyrics --> HasLyrics : 加载歌词
+    HasLyrics --> NoLyrics : 切换歌曲/无对应歌词
+    
+    HasLyrics --> ShowInfo : 初始状态
+    ShowInfo --> ShowLyrics : 切换显示模式
+    ShowLyrics --> ShowInfo : 切换显示模式
+}
+
+' 搜索状态
+state "搜索状态" as SearchState {
+    state "未搜索" as NotSearching
+    state "搜索中" as Searching
+    state "有结果" as HasResults
+    state "无结果" as NoResults
+    
+    [*] --> NotSearching
+    NotSearching --> Searching : 输入搜索关键词
+    Searching --> HasResults : 找到匹配项
+    Searching --> NoResults : 无匹配项
+    HasResults --> NotSearching : 清空搜索
+    NoResults --> NotSearching : 清空搜索
+    HasResults --> Searching : 修改搜索词
+    NoResults --> Searching : 修改搜索词
+}
+
+' 状态间关系
+PlayControl -[hidden]-> PlaylistState
+PlaylistState -[hidden]-> LyricsState
+LyricsState -[hidden]-> SearchState
+
+' 状态间转换
+EmptyPlaylist --> Stopped
+HasSongs --> Playing : 选择歌曲播放
+Playing --> HasLyrics : 加载当前歌曲歌词
+Playing --> NoLyrics : 无可用歌词
+
+@enduml 

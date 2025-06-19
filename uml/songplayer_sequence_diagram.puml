@@ -1,0 +1,145 @@
+@startuml MySongPlayer项目播放时序图
+
+' 配置
+skinparam backgroundColor white
+skinparam defaultFontName Microsoft YaHei
+skinparam sequenceArrowColor #333
+skinparam sequenceParticipantBorderColor #333
+skinparam sequenceGroupBorderColor #333
+skinparam sequenceGroupBodyBackgroundColor #f5f5f5
+
+' 标题
+title MySongPlayer项目 - 播放歌曲时序图
+
+' 参与者定义
+actor "用户" as User
+participant "QML界面" as QML
+participant "PlayerController" as PC
+participant "PlaylistCoordinator" as PLCO
+participant "PlaylistModel" as PLM
+participant "AudioPlayer" as AP
+participant "LyricsService" as LS
+participant "LyricsModel" as LM
+
+' 播放新歌曲的完整流程
+group 选择并播放歌曲
+    User -> QML: 点击播放列表中的歌曲
+    activate QML
+    QML -> PC: switchToAudioByIndex(index)
+    activate PC
+    PC -> PLCO: switchToAudioByIndex(index)
+    activate PLCO
+    PLCO -> PLM: getAudioInfoAtIndex(index)
+    activate PLM
+    PLM --> PLCO: 返回AudioInfo对象
+    deactivate PLM
+    PLCO -> PLM: setCurrentSong(audioInfo)
+    activate PLM
+    PLM --> PLCO: 当前歌曲变更
+    deactivate PLM
+    PLCO --> PC: 当前歌曲变更通知
+    deactivate PLCO
+    PC -> AP: setSource(audioSource)
+    activate AP
+    AP --> PC: 音频源设置完成
+    PC -> AP: playPause()
+    AP --> PC: 开始播放
+    deactivate AP
+    PC --> QML: 更新播放状态
+    deactivate PC
+    QML --> User: 显示正在播放状态
+    deactivate QML
+end
+
+group 加载歌词
+    PC -> LS: hasLyricsFile(audioSource)
+    activate LS
+    LS --> PC: 返回是否有歌词文件
+    alt 有歌词文件
+        PC -> LS: parseLrcFile(audioSource)
+        LS --> PC: 返回解析后的歌词行
+        deactivate LS
+        PC -> LM: setLyrics(lyrics)
+        activate LM
+        LM --> PC: 歌词加载完成
+        deactivate LM
+        PC --> QML: 更新LyricsModel属性
+        QML --> User: 显示歌词准备就绪
+    else 无歌词文件
+        PC -> LM: clearLyrics()
+        activate LM
+        LM --> PC: 清除歌词完成
+        deactivate LM
+        PC --> QML: 更新LyricsModel属性
+        QML --> User: 显示"无歌词"或歌曲信息
+    end
+end
+
+group 播放过程中
+    loop 每100ms
+        AP --> PC: positionChanged信号
+        PC -> LM: updateCurrentPosition(position)
+        activate LM
+        LM --> PC: 当前歌词行更新
+        deactivate LM
+        PC --> QML: 更新进度条和当前歌词
+        QML --> User: 显示播放进度和同步歌词
+    end
+
+    User -> QML: 拖动进度条
+    activate QML
+    QML -> PC: setPosition(position)
+    activate PC
+    PC -> AP: setPosition(position)
+    activate AP
+    AP --> PC: 位置设置完成
+    deactivate AP
+    PC --> QML: 播放位置已更新
+    deactivate PC
+    QML --> User: 更新进度条显示
+    deactivate QML
+
+    User -> QML: 调整音量
+    activate QML
+    QML -> PC: setVolume(volume)
+    activate PC
+    PC -> AP: setVolume(volume)
+    activate AP
+    AP --> PC: 音量设置完成
+    deactivate AP
+    PC --> QML: 音量已更新
+    deactivate PC
+    QML --> User: 更新音量显示
+    deactivate QML
+end
+
+group 播放完成
+    AP --> PC: playbackFinished()信号
+    activate PC
+    PC -> PLCO: handlePlaybackFinished()
+    activate PLCO
+    
+    alt 列表循环模式
+        PLCO -> PLCO: switchToNextSong()
+        PLCO --> PC: 下一首歌曲
+    else 单曲循环模式
+        PLCO -> PLCO: 重新播放当前歌曲
+        PLCO --> PC: 同一首歌曲
+    else 随机播放模式
+        PLCO -> PLCO: 随机选择下一首
+        PLCO --> PC: 随机歌曲
+    end
+    deactivate PLCO
+    
+    PC -> AP: setSource(nextAudioSource)
+    activate AP
+    AP --> PC: 音频源设置完成
+    PC -> AP: playPause()
+    AP --> PC: 开始播放
+    deactivate AP
+    PC --> QML: 更新当前歌曲和播放状态
+    deactivate PC
+    QML --> User: 显示新歌曲信息
+end
+
+@enduml 

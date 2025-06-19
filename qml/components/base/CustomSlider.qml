@@ -6,7 +6,6 @@ import SongPlayer
 Slider {
     id: root
     
-    // 样式配置属性
     property color sliderColor: AppStyles.primaryColor
     property color backgroundColor: AppStyles.transparentWhite
     property int handleSize: AppStyles.sliderHandle
@@ -14,16 +13,13 @@ Slider {
     property bool showClickableArea: false
     property bool enableDragFeedback: false
     
-    // 拖拽状态相关
     property bool isDragging: pressed
     property real dragValue: value
     
-    // 自定义信号
     signal dragStarted()
     signal dragEnded()
     signal clicked(real clickPosition)
     
-    // 拖拽状态变化处理
     onPressedChanged: {
         if (pressed) {
             root.dragStarted()
@@ -38,7 +34,6 @@ Slider {
         }
     }
     
-    // 自定义手柄
     handle: Rectangle {
         x: root.visualPosition * (root.width - width)
         y: (root.height - height) / 2
@@ -47,7 +42,6 @@ Slider {
         radius: root.handleSize / 2
         color: root.sliderColor
         
-        // 按下时的缩放动画
         Behavior on scale {
             NumberAnimation { 
                 duration: AppStyles.shortAnimation 
@@ -58,7 +52,6 @@ Slider {
         scale: root.pressed ? 1.2 : 1.0
     }
     
-    // 自定义背景轨道
     background: Rectangle {
         x: 0
         y: (root.height - height) / 2
@@ -67,7 +60,6 @@ Slider {
         radius: root.trackHeight / 2
         color: root.backgroundColor
         
-        // 进度填充
         Rectangle {
             width: root.visualPosition * parent.width
             height: parent.height
@@ -75,11 +67,10 @@ Slider {
             radius: parent.radius
         }
         
-        // 修复可点击区域 - 移除对isDragging的依赖
         MouseArea {
             anchors.fill: parent
             enabled: root.showClickableArea && root.enabled
-            // 只有在不是通过handle拖拽时才处理点击
+            // Only process clicks when not dragging through the handle
             acceptedButtons: Qt.LeftButton
             
             onClicked: function(mouse) {

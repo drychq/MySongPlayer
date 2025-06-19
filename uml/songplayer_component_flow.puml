@@ -1,0 +1,135 @@
+@startuml MySongPlayer项目流程图
+
+' 配置
+skinparam backgroundColor white
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultTextAlignment center
+skinparam handwritten false
+skinparam arrowColor #333
+skinparam arrowThickness 1
+
+' 箭头样式
+skinparam arrow {
+    MessageAlignment center
+}
+
+' 标题
+title MySongPlayer项目 - 数据流图
+
+' 参与者
+actor "用户" as User
+participant "QML界面" as QML
+participant "PlayerController" as PC
+participant "AudioPlayer" as AP
+participant "PlaylistCoordinator" as PLCO
+participant "PlaylistModel" as PLM
+participant "AudioImporter" as AIM
+participant "AudioSearchModel" as ASM
+participant "PlaylistStorageService" as PSS
+participant "LyricsService" as LS
+participant "LyricsModel" as LM
+database "PlaylistDatabase" as PDB
+database "本地文件系统" as FS
+
+' 流程图
+
+== 初始化流程 ==
+PC -> PLCO: 创建PlaylistCoordinator
+PLCO -> PLM: 创建/获取PlaylistModel
+PC -> AP: 创建AudioPlayer
+PC -> AIM: 创建AudioImporter
+PC -> LS: 创建LyricsService
+PC -> LM: 创建LyricsModel
+PLCO -> PSS: 创建/获取PlaylistStorageService
+PSS -> PDB: 初始化数据库
+PLCO -> PSS: 加载默认播放列表
+PSS -> PDB: 查询播放列表数据
+PSS --> PLCO: 返回播放列表数据
+PLCO -> PLM: 更新播放列表模型
+
+== 播放控制流程 ==
+User -> QML: 点击播放/暂停
+QML -> PC: playPause()
+PC -> AP: playPause()
+AP --> QML: 播放状态变化通知
+
+User -> QML: 拖动进度条
+QML -> PC: setPosition()
+PC -> AP: setPosition()
+
+User -> QML: 点击上一首/下一首
+QML -> PC: switchToPreviousSong()/switchToNextSong()
+PC -> PLCO: switchToPreviousSong()/switchToNextSong()
+PLCO -> PLM: 切换当前歌曲
+PLCO --> PC: 当前歌曲变化通知
+PC -> AP: setSource(当前歌曲URL)
+PLM --> QML: 当前歌曲变化通知
+
+== 播放列表管理流程 ==
+User -> QML: 添加本地音频
+QML -> PC: importLocalAudio(fileUrls)
+PC -> AIM: importLocalAudio(fileUrls)
+AIM -> FS: 读取音频文件
+AIM -> AIM: 解析元数据
+AIM --> PC: audioImported(元数据)
+PC -> PLCO: addAudio(元数据)
+PLCO -> PLM: addAudio(元数据)
+PLM --> QML: 播放列表更新通知
+
+User -> QML: 删除音频
+QML -> PC: removeAudio(index)
+PC -> PLCO: removeAudio(index)
+PLCO -> PLM: removeAudio(index)
+PLM --> QML: 播放列表更新通知
+
+User -> QML: 点击播放列表项
+QML -> PC: switchToAudioByIndex(index)
+PC -> PLCO: switchToAudioByIndex(index)
+PLCO -> PLM: 切换当前歌曲
+PLCO --> PC: 当前歌曲变化通知
+PC -> AP: setSource(当前歌曲URL)
+PLM --> QML: 当前歌曲变化通知
+
+== 播放列表持久化流程 ==
+User -> QML: 保存播放列表
+QML -> PC: saveCurrentPlaylist(name)
+PC -> PLCO: saveCurrentPlaylist(name)
+PLCO -> PSS: savePlaylist(name, audioItems)
+PSS -> PDB: 保存数据
+PSS --> PLCO: 保存结果
+PLCO --> PC: 保存结果
+PC --> QML: 保存结果通知
+
+User -> QML: 加载播放列表
+QML -> PC: loadPlaylist(name)
+PC -> PLCO: loadPlaylist(name)
+PLCO -> PSS: loadPlaylist(name)
+PSS -> PDB: 查询数据
+PSS --> PLCO: 返回播放列表数据
+PLCO -> PLM: 更新播放列表模型
+PLM --> QML: 播放列表更新通知
+
+== 搜索流程 ==
+User -> QML: 搜索歌曲
+QML -> ASM: searchSong(query)
+ASM -> ASM: 执行搜索
+ASM --> QML: 搜索结果通知
+
+User -> QML: 播放列表内搜索
+QML -> PC: getPlaylistAudioInfoList()
+PC -> PLCO: getPlaylistAudioInfoList()
+PLCO -> PLM: getPlaylistAudioInfoList()
+PLM --> PLCO: 返回音频列表
+PLCO --> PC: 返回音频列表
+PC --> QML: 返回音频列表
+QML -> QML: 执行本地搜索
+
+== 歌词显示流程 ==
+PC -> LS: parseLrcFile(audioFilePath)
+LS -> FS: 查找歌词文件
+LS --> PC: 返回解析的歌词
+PC -> LM: setLyrics(歌词)
+PC -> LM: updateCurrentPosition(position)
+LM --> QML: 当前歌词更新通知
+
+@enduml 
