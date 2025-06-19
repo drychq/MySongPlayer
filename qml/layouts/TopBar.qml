@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import MySongPlayer
-import "../components/complex"
 
 Item {
     id: root

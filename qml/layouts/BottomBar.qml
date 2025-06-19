@@ -2,7 +2,7 @@
 import QtQuick
 import QtQuick.Layouts
 import MySongPlayer
-import "../components/complex"
+
 
 Rectangle {
     id: root

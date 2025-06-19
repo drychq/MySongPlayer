@@ -1,3 +1,4 @@
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-18
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
@@ -28,7 +29,7 @@ ApplicationWindow {
             anchors.fill: parent
 
             onPlaylistToggleRequested: {
-                playlistPanel.hidden = !playlistPanel.hidden
+                playListPanel.hidden = !playListPanel.hidden
             }
 
             onShowAddOptionsRequested: {
@@ -51,8 +52,8 @@ ApplicationWindow {
             }
         }
 
-        PlaylistPanel {
-            id: playlistPanel
+        PlayListPanel {
+            id: playListPanel
             anchors {
                 top: topBar.bottom
             }
@@ -109,12 +110,11 @@ ApplicationWindow {
 
         onNetworkImportRequested: {
             close()
-            // Activate network search mode
             topBar.useNetworkSearch = true
             searchPanel.searchMode = "network"
             searchPanel.hidden = false
             topBar.searchPanelHidden = false
-            console.log("Network import mode activated")
+            playListPanel.hidden = true
         }
     }
 

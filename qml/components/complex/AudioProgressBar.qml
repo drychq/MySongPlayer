@@ -3,8 +3,6 @@ import QtQuick
 import QtQuick.Layouts
 import MySongPlayer
 
-import "../base"
-
 Item
 {
     id: root

@@ -33,7 +33,7 @@ qt_add_qml_module(appMySongPlayer
         qml/components/complex/AddSongOptionsPopup.qml
 
         qml/panels/SearchPanel.qml
-        qml/panels/PlaylistPanel.qml
+        qml/panels/PlayListPanel.qml
 
         qml/styles/AppStyles.qml
 
