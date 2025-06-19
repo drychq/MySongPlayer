@@ -1,12 +1,11 @@
 // Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
 import QtQuick
 import QtQuick.Layouts
-import MySongPlayer
-
+import SongPlayer
 
 Rectangle {
     id: root
-
+    
     height: AppStyles.bottomBarHeight
     color: AppStyles.surfaceColor
 
@@ -27,7 +26,7 @@ Rectangle {
             spacing: AppStyles.mediumSpacing
 
             Item {
-                Layout.preferredWidth: 120
+                Layout.preferredWidth: AppStyles.controlBarHeight * 4
                 Layout.fillHeight: true
                 Layout.alignment: Qt.AlignVCenter
 
@@ -40,11 +39,12 @@ Rectangle {
                 }
             }
 
+            // 中间容器 - 播放按钮组居中显示
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.alignment: Qt.AlignVCenter
-
+                
                 RowLayout {
                     anchors.centerIn: parent
                     spacing: 15
@@ -79,7 +79,7 @@ Rectangle {
 
             VolumeSlider {
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredWidth: 120
+                Layout.preferredWidth: AppStyles.controlBarHeight * 4
                 Layout.fillHeight: true
                 opacity: PlayerController.currentSong ? 1 : 0.3
             }

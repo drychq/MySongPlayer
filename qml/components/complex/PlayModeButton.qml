@@ -1,13 +1,14 @@
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
-import MySongPlayer
+import SongPlayer
 
 ImageButton {
     id: root
-
+    
     readonly property int modeLoop: 0
     readonly property int modeShuffle: 1  
     readonly property int modeRepeatOne: 2
-
+    
     source: {
         switch(PlayerController.playMode) {
             case modeLoop:
@@ -20,7 +21,7 @@ ImageButton {
                 return AppStyles.listCycleIcon
         }
     }
-
+    
     onClicked: {
         const currentMode = PlayerController.playMode
         let nextMode

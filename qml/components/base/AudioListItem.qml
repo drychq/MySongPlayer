@@ -1,37 +1,36 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
 import QtQuick.Layouts
-import MySongPlayer
+import SongPlayer
 
 Rectangle {
     id: root
-
+    
     property string audioTitle: ""
-    property string audioAuthor: ""
+    property string audioAuthor: ""  
     property url audioImageSource: ""
     property url audioSource: ""
     property url audioVideoSource: ""
     property int audioIndex: -1
-
+    
     property color itemColor: AppStyles.backgroundColor
     property color textPrimaryColor: AppStyles.textPrimary
     property color textSecondaryColor: AppStyles.textSecondary
     property bool showImage: true
     property bool showActionButton: false
     property string actionButtonIcon: ""
-
+    
     signal clicked()
     signal actionClicked()
-
     width: parent ? parent.width : 200
-    height: 50
+    height: AppStyles.listItemHeight
     color: root.itemColor
-
+    
     RowLayout {
         anchors.fill: parent
         anchors.margins: AppStyles.smallSpacing
         spacing: AppStyles.smallSpacing
-
+        
         Image {
             id: audioImage
             Layout.preferredWidth: AppStyles.mediumIcon
@@ -42,11 +41,12 @@ Rectangle {
             mipmap: true
             fillMode: Image.PreserveAspectFit
         }
-
+        
         ColumnLayout {
             Layout.fillWidth: true
             spacing: AppStyles.smallSpacing
 
+   
             Text {
                 Layout.fillWidth: true
                 text: root.audioTitle
@@ -56,7 +56,7 @@ Rectangle {
                 elide: Text.ElideRight
                 font: AppStyles.subtitleFont
             }
-
+            
             Text {
                 Layout.fillWidth: true
                 text: root.audioAuthor
@@ -67,21 +67,24 @@ Rectangle {
                 font: AppStyles.smallFont
             }
         }
-
+        
     }
+
 
     TapHandler {
+        gesturePolicy: TapHandler.ReleaseWithinBounds
         onTapped: root.clicked()
     }
+    
 
     property bool enableHoverEffect: true
     opacity: (enableHoverEffect && mainHoverHandler.hovered) ? 0.8 : 1.0
-
+    
     HoverHandler {
         id: mainHoverHandler
         enabled: root.enableHoverEffect
     }
-
+    
     Behavior on opacity {
         NumberAnimation {
             duration: AppStyles.shortAnimation

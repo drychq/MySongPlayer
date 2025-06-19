@@ -1,8 +1,8 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
 import QtQuick.Layouts
 import QtMultimedia
-import MySongPlayer
+import SongPlayer
 
 Item {
     id: root
@@ -15,8 +15,8 @@ Item {
         spacing: AppStyles.largeSpacing
 
         Item {
-            Layout.preferredWidth: 150
-            Layout.preferredHeight: 150
+            Layout.preferredWidth: AppStyles.audioInfoBoxSize
+            Layout.preferredHeight: AppStyles.audioInfoBoxSize
             Layout.alignment: Qt.AlignVCenter
 
             Image {
@@ -76,4 +76,4 @@ Item {
             albumVideo.stop()
         }
     }
-}
+} 

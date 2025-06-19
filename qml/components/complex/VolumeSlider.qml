@@ -1,11 +1,11 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
 import QtQuick.Layouts
-import MySongPlayer
+import SongPlayer
 
 Item {
     id: root
-
+    
     property color sliderColor: AppStyles.primaryColor
     property color backgroundColor: AppStyles.transparentWhite
     property color iconColor: AppStyles.textPrimary
@@ -14,13 +14,13 @@ Item {
     RowLayout {
         anchors.fill: parent
         spacing: AppStyles.mediumSpacing
-
+        
         Image {
             id: volumeIcon
             Layout.preferredWidth: root.iconSize
             Layout.preferredHeight: root.iconSize
             Layout.alignment: Qt.AlignVCenter
-
+            
             source: {
                 if (PlayerController.muted || PlayerController.volume === 0) {
                     return AppStyles.volumeMuteIcon
@@ -55,9 +55,9 @@ Item {
             
             from: 0
             to: 1
-            //value: PlayerController.muted ? 0 : PlayerController.volume
+            value: PlayerController.muted ? 0 : PlayerController.volume
             enabled: !!PlayerController.currentSong
-            height: 30
+            height: AppStyles.controlBarHeight
             
             sliderColor: root.sliderColor
             backgroundColor: root.backgroundColor
@@ -70,4 +70,4 @@ Item {
             }
         }
     }
-} 
+}

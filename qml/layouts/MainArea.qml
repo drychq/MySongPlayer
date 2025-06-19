@@ -1,18 +1,18 @@
 // Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
 import QtQuick
-import MySongPlayer
+import SongPlayer
 
 Rectangle {
     id: root
-
+    
     color: AppStyles.backgroundColor
 
 
     HoverHandler {
         onHoveredChanged: {
-           /* if (PlayerController.lyricsModel.hasLyrics) {
+            if (PlayerController.lyricsModel.hasLyrics) {
                 parent.opacity = hovered ? 0.8 : 1.0
-            }*/
+            }
         }
     }
 
@@ -30,15 +30,15 @@ Rectangle {
             verticalCenter: parent.verticalCenter
             margins: AppStyles.largeSpacing
         }
-        //visible: !PlayerController.lyricsModel.showLyrics
+        visible: !PlayerController.lyricsModel.showLyrics
     }
-
+    
     LyricsDisplay {
         id: lyricsDisplay
         anchors.fill: parent
-        //visible: PlayerController.lyricsModel.showLyrics && PlayerController.lyricsModel.hasLyrics
-        //lyricsModel: PlayerController.lyricsModel
-
+        visible: PlayerController.lyricsModel.showLyrics && PlayerController.lyricsModel.hasLyrics
+        lyricsModel: PlayerController.lyricsModel
+        
         Behavior on opacity {
             NumberAnimation {
                 duration: 300
@@ -46,4 +46,4 @@ Rectangle {
             }
         }
     }
-}
+} 

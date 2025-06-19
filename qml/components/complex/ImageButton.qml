@@ -1,11 +1,11 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
-import MySongPlayer
+import SongPlayer
 
 Image {
     id: root
 
-        signal clicked
+    signal clicked
     fillMode: Image.PreserveAspectFit
 
     opacity: buttonHoverHandler.hovered ? 0.75 : 1
@@ -23,11 +23,10 @@ Image {
             root.clicked()
         }
     }
-
+    
     Behavior on opacity {
         NumberAnimation {
             duration: AppStyles.shortAnimation
         }
     }
-}
-
+} 

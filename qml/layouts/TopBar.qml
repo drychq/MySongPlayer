@@ -2,25 +2,25 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import MySongPlayer
+import SongPlayer
 
 Item {
     id: root
-
+    
     property alias searchPanelHidden: root._searchPanelHidden
     property alias playlistPanelHidden: root._playlistPanelHidden
-    property bool useNetworkSearch: false  // Search mode flag: false=local search, true=network search
-
+    property bool useNetworkSearch: false
+    
     property bool _searchPanelHidden: true
     property bool _playlistPanelHidden: true
-
+    
     signal playlistToggleRequested()
     signal showAddOptionsRequested()
     signal closeSearchRequested()
     signal searchResultsRequested()
-
+    
     height: AppStyles.topBarHeight
-
+    
     Rectangle {
         id: topbar
         anchors.fill: parent
@@ -37,23 +37,21 @@ Item {
 
             SearchField {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
+                Layout.preferredHeight: AppStyles.controlBarHeight
                 visible: !root._searchPanelHidden
 
                 onAccepted: value => {
-                    if (root.useNetworkSearch) {
-                        // Network search
-                        console.log("Network search triggered:", value)
-                        AudioSearchModel.searchSong(value)
-                    } else {
-                        // Local playlist search
-                        var playlistData = PlayerController.getPlaylistAudioInfoList()
-                        console.log("Local search triggered:", value, "playlist data count:", playlistData.length)
-                        PlaylistSearchModel.performSearch(playlistData, value)
-                    }
-                    root.searchResultsRequested()
-                    topbar.forceActiveFocus()
-                }
+                                if (root.useNetworkSearch) {
+                                    console.log("Network search triggered:", value)
+                                    AudioSearchModel.searchSong(value)
+                                } else {
+                                    var playlistData = PlayerController.getPlaylistAudioInfoList()
+                                    console.log("Local search triggered:", value, "playlist data count:", playlistData.length)
+                                    PlaylistSearchModel.performSearch(playlistData, value)
+                                }
+                                root.searchResultsRequested()
+                                topbar.forceActiveFocus()
+                            }
             }
 
             Item {
@@ -101,5 +99,4 @@ Item {
             }
         }
     }
-
-}
+} 

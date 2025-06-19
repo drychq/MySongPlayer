@@ -1,9 +1,9 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
-import MySongPlayer
+import SongPlayer
 
 Popup {
     id: root
@@ -32,7 +32,7 @@ Popup {
             shadowVerticalOffset: 4
             shadowBlur: 0.6
             shadowOpacity: 0.25
-            shadowColor: "#000000"
+            shadowColor: AppStyles.shadowColor
         }
     }
     
@@ -157,7 +157,6 @@ Popup {
         }
     }
     
-    // 进入和退出动画
     enter: Transition {
         NumberAnimation {
             property: "opacity"

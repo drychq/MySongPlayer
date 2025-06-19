@@ -1,47 +1,51 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
 import QtQuick.Controls
-import MySongPlayer
+import SongPlayer
 
 Rectangle {
-    id: root
+  id: root
 
-    property alias text: searchInput.text
-    signal accepted(string value)
+  property alias text: searchInput.text
+  signal accepted(string value)
 
-    color: "#1e1e1e"
-    border.color: searchInput.activeFocus ? Qt.lighter("#5F8575") : "transparent"
-    border.width: 1
+  color: AppStyles.backgroundColor
+  border.color: searchInput.activeFocus ? AppStyles.primaryColorLight : AppStyles.transparentColor
+  border.width: AppStyles.standardBorderWidth
 
-    opacity: enabled ? 1 : 0.6
+  opacity: enabled ? 1 : 0.6
 
-    TextField {
-        id: searchInput
+  TextField {
+    id: searchInput
 
-        anchors.fill: parent
+    anchors.fill: parent
 
-        font: AppStyles.bodyFont
-        color: AppStyles.textPrimary
+    font: AppStyles.bodyFont
+    color: AppStyles.textPrimary
+    
 
-        leftPadding: 30
-        verticalAlignment: TextInput.AlignVCenter
+    background: null
 
-        Image {
-            anchors {
-                left: parent.left
-                leftMargin: 5
-                verticalCenter: parent.verticalCenter
-            }
+ // Search icon size
+    leftPadding: 30
+    verticalAlignment: TextInput.AlignVCenter
 
-            width: 16
-            height: 16
+    Image {
+      anchors {
+        left: parent.left
+        leftMargin: 5
+        verticalCenter: parent.verticalCenter
+      }
 
-            mipmap: true
-            source: AppStyles.searchIcon
-        }
+      width: AppStyles.searchIconSize
+      height: AppStyles.searchIconSize
 
-        onAccepted: {
-            root.accepted(text)
-        }
+      mipmap: true
+      source: AppStyles.searchIcon
     }
+
+    onAccepted: {
+      root.accepted(text)
+    }
+  }
 }

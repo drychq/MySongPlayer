@@ -1,20 +1,17 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-18
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtCore
-import MySongPlayer
-import "layouts"
-import "panels"
-import "components/complex"
+import SongPlayer
 
 ApplicationWindow {
     id: root
-    width: 480
-    height: 640
+    width: AppStyles.mainWindowWidth
+    height: AppStyles.mainWindowHeight
     visible: true
-    title: "My Song Player"
+    title: "Song Player"
 
     Item {
         id: topContainer
@@ -27,25 +24,23 @@ ApplicationWindow {
         TopBar {
             id: topBar
             anchors.fill: parent
-
+            
             onPlaylistToggleRequested: {
                 playListPanel.hidden = !playListPanel.hidden
             }
-
+            
             onShowAddOptionsRequested: {
                 addSongOptionsPopup.open()
             }
-
+            
             onCloseSearchRequested: {
                 searchPanel.hidden = true
                 topBar.searchPanelHidden = true
-                // Clear search results and reset search mode
                 PlaylistSearchModel.clearSearch()
-                // Reset to local search mode
                 topBar.useNetworkSearch = false
                 searchPanel.searchMode = "local"
             }
-
+            
             onSearchResultsRequested: {
                 searchPanel.hidden = false
                 topBar.searchPanelHidden = false
@@ -94,7 +89,7 @@ ApplicationWindow {
         }
         height: mainArea.height + bottomBar.height
         y: hidden ? parent.height : topContainer.height
-
+        
         onHiddenChanged: {
             topBar.searchPanelHidden = hidden
         }
@@ -102,12 +97,12 @@ ApplicationWindow {
 
     AddSongOptionsPopup {
         id: addSongOptionsPopup
-
+        
         onLocalImportRequested: {
             close()
             audioFileDialog.open()
         }
-
+        
         onNetworkImportRequested: {
             close()
             topBar.useNetworkSearch = true
@@ -117,7 +112,7 @@ ApplicationWindow {
             playListPanel.hidden = true
         }
     }
-
+    
     FileDialog {
         id: audioFileDialog
         title: "Select Audio Files"

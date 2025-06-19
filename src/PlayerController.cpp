@@ -13,21 +13,6 @@ PlayerController::PlayerController(QObject *parent)
         m_mediaPlayer.setAudioOutput(new QAudioOutput(&m_mediaPlayer));
     }
 
-    addAudio("Eine Kleine Nachtmusik",
-             "Wolfgang Amadeus Mozart",
-             QUrl("qrc:/MySongPlayer/assets/audio/eine_kleine_nachtmusik.mp3"),
-             QUrl("qrc:/MySongPlayer/assets/images/song_1.jpg"));
-
-    addAudio("Symphony No. 5",
-             "Ludwig Van Beethoven",
-             QUrl("qrc:/MySongPlayer/assets/audio/symphony_no_5.mp3"),
-             QUrl("qrc:/MySongPlayer/assets/images/song_2.jpg"));
-
-    addAudio("Air on the G String",
-             "Johann Sebastian Bach",
-             QUrl("qrc:/MySongPlayer/assets/audio/air_on_the_g_string.mp3"),
-             QUrl("qrc:/MySongPlayer/assets/images/song_3.jpg"),
-             QUrl("qrc:/MySongPlayer/assets/videos/video_1.avi"));
 }
 
 bool PlayerController::playing() const
