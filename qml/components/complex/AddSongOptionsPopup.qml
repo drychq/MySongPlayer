@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
-import SongPlayer
+import MySongPlayer
 
 Popup {
     id: root

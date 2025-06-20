@@ -5,7 +5,7 @@
 */
 pragma Singleton
 import QtQuick
-import SongPlayer
+import MySongPlayer
 
 QtObject {
     id: root
@@ -55,25 +55,25 @@ QtObject {
         pixelSize: 10
     })
     
-    readonly property string playIcon: "/SongPlayer/assets/icons/play_icon.png"
-    readonly property string pauseIcon: "/SongPlayer/assets/icons/pause_icon.png"
-    readonly property string previousIcon: "/SongPlayer/assets/icons/previous_icon.png"
-    readonly property string nextIcon: "/SongPlayer/assets/icons/next_icon.png"
+    readonly property string playIcon: "/MySongPlayer/assets/icons/play_icon.png"
+    readonly property string pauseIcon: "/MySongPlayer/assets/icons/pause_icon.png"
+    readonly property string previousIcon: "/MySongPlayer/assets/icons/previous_icon.png"
+    readonly property string nextIcon: "/MySongPlayer/assets/icons/next_icon.png"
 
-    readonly property string listCycleIcon: "/SongPlayer/assets/icons/list_cycle_icon.png"
-    readonly property string randomIcon: "/SongPlayer/assets/icons/random_icon.png"
-    readonly property string repeatOneIcon: "/SongPlayer/assets/icons/repeat_icon.png"
+    readonly property string listCycleIcon: "/MySongPlayer/assets/icons/list_cycle_icon.png"
+    readonly property string randomIcon: "/MySongPlayer/assets/icons/random_icon.png"
+    readonly property string repeatOneIcon: "/MySongPlayer/assets/icons/repeat_icon.png"
 
-    readonly property string volumeHighIcon: "/SongPlayer/assets/icons/high_icon.png"
-    readonly property string volumeLowIcon: "/SongPlayer/assets/icons/low_icon.png"
-    readonly property string volumeMuteIcon: "/SongPlayer/assets/icons/mute_icon.png"
-    readonly property string volumeMedium: "/SongPlayer/assets/icons/medium_icon.png"
+    readonly property string volumeHighIcon: "/MySongPlayer/assets/icons/high_icon.png"
+    readonly property string volumeLowIcon: "/MySongPlayer/assets/icons/low_icon.png"
+    readonly property string volumeMuteIcon: "/MySongPlayer/assets/icons/mute_icon.png"
+    readonly property string volumeMedium: "/MySongPlayer/assets/icons/medium_icon.png"
 
-    readonly property string searchIcon: "/SongPlayer/assets/icons/search_icon.png"
-    readonly property string menuIcon: "/SongPlayer/assets/icons/menu_icon.png"
-    readonly property string addIcon: "/SongPlayer/assets/icons/add_icon.png"
-    readonly property string closeIcon: "/SongPlayer/assets/icons/close_icon.png"
-    readonly property string trashIcon: "/SongPlayer/assets/icons/trash_icon.png"
+    readonly property string searchIcon: "/MySongPlayer/assets/icons/search_icon.png"
+    readonly property string menuIcon: "/MySongPlayer/assets/icons/menu_icon.png"
+    readonly property string addIcon: "/MySongPlayer/assets/icons/add_icon.png"
+    readonly property string closeIcon: "/MySongPlayer/assets/icons/close_icon.png"
+    readonly property string trashIcon: "/MySongPlayer/assets/icons/trash_icon.png"
     
     // Animation configuration
     readonly property int shortAnimation: 100

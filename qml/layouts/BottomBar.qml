@@ -1,7 +1,7 @@
 // Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
 import QtQuick
 import QtQuick.Layouts
-import SongPlayer
+import MySongPlayer
 
 Rectangle {
     id: root

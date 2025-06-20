@@ -40,16 +40,15 @@ qt_add_qml_module(appMySongPlayer
         qml/utils/TimeUtils.js
 
         SOURCES
-        src/AudioInfo.cpp src/AudioInfo.h
-        src/AudioSearchModel.cpp src/AudioSearchModel.h
-        src/PlayerController.h src/PlayerController.cpp
+        src/controllers/PlayerController.cpp
+        src/controllers/PlayerController.h
+        src/models/AudioInfo.cpp
+        src/models/AudioInfo.h
+        src/models/AudioSearchModel.cpp
+        src/models/AudioSearchModel.h
 
         RESOURCES
         qml/qmldir
-
-        assets/images/song_1.jpg
-        assets/images/song_2.jpg
-        assets/images/song_3.jpg
 
         assets/icons/trash_icon.png
         assets/icons/search_icon.png
@@ -71,14 +70,6 @@ qt_add_qml_module(appMySongPlayer
         assets/icons/app_icon.ico
         assets/icons/add_icon.png
 
-
-        assets/videos/video_1.avi
-
-        assets/audio/symphony_no_5.mp3
-        assets/audio/air_on_the_g_string.mp3
-        assets/audio/eine_kleine_nachtmusik.mp3
-        assets/audio/reprezentuje_biede.mp3
-
         README.md
 )
 
@@ -90,8 +81,11 @@ set_target_properties(appMySongPlayer PROPERTIES
         WIN32_EXECUTABLE TRUE
 )
 
-target_include_directories(appMySongPlayer
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(appMySongPlayer PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/models
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/controllers
+)
 
 target_link_libraries(appMySongPlayer
         PRIVATE Qt6::Quick Qt6::Multimedia)

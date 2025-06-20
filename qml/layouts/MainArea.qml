@@ -1,6 +1,6 @@
 // Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
 import QtQuick
-import SongPlayer
+import MySongPlayer
 
 Rectangle {
     id: root
@@ -36,8 +36,8 @@ Rectangle {
     LyricsDisplay {
         id: lyricsDisplay
         anchors.fill: parent
-        visible: PlayerController.lyricsModel.showLyrics && PlayerController.lyricsModel.hasLyrics
-        lyricsModel: PlayerController.lyricsModel
+        //visible: PlayerController.lyricsModel.showLyrics && PlayerController.lyricsModel.hasLyrics
+        //lyricsModel: PlayerController.lyricsModel
         
         Behavior on opacity {
             NumberAnimation {

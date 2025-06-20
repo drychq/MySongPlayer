@@ -1,7 +1,7 @@
 // Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
 import QtQuick.Controls
-import SongPlayer
+import MySongPlayer
 
 Slider {
     id: root

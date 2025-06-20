@@ -2,7 +2,7 @@
 import QtQuick
 import QtQuick.Layouts
 
-import SongPlayer
+import MySongPlayer
 
 Rectangle {
   id: root

@@ -4,7 +4,7 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtCore
-import SongPlayer
+import MySongPlayer
 
 ApplicationWindow {
     id: root

@@ -1,6 +1,6 @@
 // Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
-import SongPlayer
+import MySongPlayer
 
 ImageButton {
     id: root

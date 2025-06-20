@@ -2,7 +2,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtMultimedia
-import SongPlayer
+import MySongPlayer
 
 Item {
     id: root
