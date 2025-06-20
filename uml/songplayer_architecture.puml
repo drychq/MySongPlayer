@@ -93,7 +93,7 @@ PAN -[#green]-> PC : QML调用C++
 
 ' 图例说明
 legend
-  SongPlayer1 使用 MVC + Coordinator 架构模式
+  MySongPlayer 使用 MVC + Coordinator 架构模式
   遵循依赖倒置和接口隔离原则
   ==
   绿色箭头: QML与C++交互
