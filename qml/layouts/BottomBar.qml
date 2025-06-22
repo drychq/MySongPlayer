@@ -39,7 +39,6 @@ Rectangle {
                 }
             }
 
-            // 中间容器 - 播放按钮组居中显示
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true

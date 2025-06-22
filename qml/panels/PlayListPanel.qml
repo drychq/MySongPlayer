@@ -1,4 +1,4 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-20
 import QtQuick
 import QtQuick.Layouts
 import MySongPlayer
@@ -62,16 +62,16 @@ Rectangle {
         audioImageSource: model.audioImageSource
         audioSource: model.audioSource
         audioIndex: model.index
-        
+
         itemColor: AppStyles.backgroundColor
         showImage: true
         showActionButton: true
         actionButtonIcon: AppStyles.trashIcon
-        
+
         onClicked: {
           PlayerController.switchToAudioByIndex(audioIndex)
         }
-        
+
         onActionClicked: {
           PlayerController.removeAudio(audioIndex)
         }
@@ -98,3 +98,4 @@ Rectangle {
     }
   }
 }
+

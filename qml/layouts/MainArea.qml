@@ -10,15 +10,15 @@ Rectangle {
 
     HoverHandler {
         onHoveredChanged: {
-            if (PlayerController.lyricsModel.hasLyrics) {
-                parent.opacity = hovered ? 0.8 : 1.0
-            }
+            // if (PlayerController.lyricsModel.hasLyrics) {
+            //     parent.opacity = hovered ? 0.8 : 1.0
+            // }
         }
     }
 
     TapHandler {
         onTapped: {
-            PlayerController.lyricsModel.toggleDisplayMode()
+            //PlayerController.lyricsModel.toggleDisplayMode()
         }
     }
 
@@ -30,20 +30,21 @@ Rectangle {
             verticalCenter: parent.verticalCenter
             margins: AppStyles.largeSpacing
         }
-        visible: !PlayerController.lyricsModel.showLyrics
+        visible: true
+        //visible: !PlayerController.lyricsModel.showLyrics
     }
     
-    LyricsDisplay {
-        id: lyricsDisplay
-        anchors.fill: parent
-        //visible: PlayerController.lyricsModel.showLyrics && PlayerController.lyricsModel.hasLyrics
-        //lyricsModel: PlayerController.lyricsModel
+    // LyricsDisplay {
+    //     id: lyricsDisplay
+    //     anchors.fill: parent
+    //     visible: PlayerController.lyricsModel.showLyrics && PlayerController.lyricsModel.hasLyrics
+    //     lyricsModel: PlayerController.lyricsModel
         
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 300
-                easing.type: Easing.OutQuad
-            }
-        }
-    }
+    //     Behavior on opacity {
+    //         NumberAnimation {
+    //             duration: 300
+    //             easing.type: Easing.OutQuad
+    //         }
+    //     }
+    // }
 } 

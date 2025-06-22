@@ -11,7 +11,7 @@ ApplicationWindow {
     width: AppStyles.mainWindowWidth
     height: AppStyles.mainWindowHeight
     visible: true
-    title: "Song Player"
+    title: "My Song Player"
 
     Item {
         id: topContainer

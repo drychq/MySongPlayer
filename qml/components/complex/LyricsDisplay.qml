@@ -2,6 +2,7 @@
 import QtQuick
 import QtQuick.Controls
 import MySongPlayer
+
 Item {
     id: root
 

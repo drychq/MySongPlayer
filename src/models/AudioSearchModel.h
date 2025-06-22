@@ -1,13 +1,13 @@
 #pragma once
 
 #include <QAbstractListModel>
-#include <QNetworkAccessManager>
 #include <QtQml/qqmlregistration.h>
 #include <QGuiApplication>
 #include <QQmlEngine>
 #include <QJSEngine>
+#include <qnetworkaccessmanager.h>
 
-class AudioInfo;
+#include "models/AudioInfo.h"
 
 class AudioSearchModel : public QAbstractListModel
 {
@@ -17,18 +17,19 @@ class AudioSearchModel : public QAbstractListModel
     Q_PROPERTY(bool isSearching READ isSearching NOTIFY isSearchingChanged)
 
 public:
-    static QObject* provider(QQmlEngine *engine, QJSEngine *scriptEngine) {
-        Q_UNUSED(engine); Q_UNUSED(scriptEngine);
-        auto model = new AudioSearchModel(QGuiApplication::instance());
-        return model;
-    }
-
     enum Role {
         AudioNameRole = Qt::UserRole + 1,
         AudioAuthorRole,
         AudioImageSourceRole,
         AudioSourceRole
     };
+    Q_ENUM(Role)
+
+    static QObject* provider(QQmlEngine *engine, QJSEngine *scriptEngine) {
+        Q_UNUSED(engine); Q_UNUSED(scriptEngine);
+        auto model = new AudioSearchModel(QGuiApplication::instance());
+        return model;
+    }
 
     explicit AudioSearchModel(QObject *parent = nullptr);
 
