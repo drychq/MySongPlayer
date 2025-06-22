@@ -5,6 +5,27 @@
 #include <QtQml/qqmlregistration.h>
 #include "models/AudioInfo.h"
 
+enum class PlayMode {
+    Loop,
+    Shuffle,
+    RepeatOne
+};
+
+class PlayModeWrapper : public QObject
+{
+    Q_OBJECT
+    QML_ELEMENT
+    QML_UNCREATABLE("PlayMode is only accessible as an enum")
+
+public:
+    enum PlayMode {
+        Loop = static_cast<int>(::PlayMode::Loop),
+        Shuffle = static_cast<int>(::PlayMode::Shuffle),
+        RepeatOne = static_cast<int>(::PlayMode::RepeatOne)
+    };
+    Q_ENUM(PlayMode)
+};
+
 class PlaylistModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -30,6 +51,9 @@ public:
     AudioInfo *currentSong() const;
     void setCurrentSong(AudioInfo *newCurrentSong);
 
+    PlayMode playMode() const;
+    void setPlayMode(PlayMode newMode);
+
     Q_INVOKABLE void addAudio(const QString& title,
                               const QString& authorName,
                               const QUrl& audioSource,
@@ -45,10 +69,15 @@ public:
 signals:
     void currentSongChanged();
     void duplicateAudioSkipped(const QString& title, const QString& reason);
+    void playModeChanged();
 
 private:
     QList<AudioInfo*> m_audioList;
     AudioInfo *m_currentSong = nullptr;
+    PlayMode m_playMode = PlayMode::Loop;
+    QList<int> m_shuffleIndices;  // Index sequence for shuffle mode
+    int m_currentShuffleIndex = -1;  // Current position in shuffle sequence
+    void generateShuffleSequence();
 };
 
 

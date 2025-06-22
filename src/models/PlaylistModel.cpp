@@ -66,6 +66,24 @@ void PlaylistModel::setCurrentSong(AudioInfo *newCurrentSong)
     emit currentSongChanged();
 }
 
+PlayMode PlaylistModel::playMode() const
+{
+    return m_playMode;
+}
+
+void PlaylistModel::setPlayMode(PlayMode newMode)
+{
+    if (m_playMode == newMode)
+        return;
+
+    m_playMode = newMode;
+    emit playModeChanged();
+
+    if (m_playMode == PlayMode::Shuffle && !m_audioList.isEmpty()) {
+        generateShuffleSequence();
+    }
+}
+
 void PlaylistModel::addAudio(const QString &title, const QString &authorName,
                              const QUrl &audioSource, const QUrl &imageSource,
                              const QUrl &videoSource)
@@ -160,3 +178,24 @@ bool PlaylistModel::isDuplicateAudio(const QUrl& audioSource) const
     return false;
 }
 
+void PlaylistModel::generateShuffleSequence()
+{
+    m_shuffleIndices.clear();
+
+    for (int i = 0; i < m_audioList.size(); ++i) {
+        m_shuffleIndices.append(i);
+    }
+
+    auto* generator = QRandomGenerator::global();
+    for (int i = m_shuffleIndices.size() - 1; i > 0; --i) {
+        int j = generator->bounded(i + 1);
+        m_shuffleIndices.swapItemsAt(i, j);
+    }
+
+    if (m_currentSong) {
+        int currentIndex = m_audioList.indexOf(m_currentSong);
+        m_currentShuffleIndex = m_shuffleIndices.indexOf(currentIndex);
+    } else {
+        m_currentShuffleIndex = -1;
+    }
+}

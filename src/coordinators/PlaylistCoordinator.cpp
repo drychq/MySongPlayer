@@ -1,6 +1,6 @@
 #include "PlaylistCoordinator.h"
-#include "PlaylistModel.h"
-
+#include "models/PlaylistModel.h"
+#include <QRandomGenerator>
 PlaylistCoordinator::PlaylistCoordinator(PlaylistModel *playlistModel, QObject *parent)
     : QObject(parent)
     , m_playlistModel(playlistModel)
@@ -26,32 +26,53 @@ void PlaylistCoordinator::switchToNextSong()
     if (!m_playlistModel || m_playlistModel->rowCount() == 0) {
         return;
     }
+
+    PlayMode playMode = m_playlistModel->playMode();
     AudioInfo* currentSong = m_playlistModel->currentSong();
 
-    if (!currentSong) {
-        AudioInfo* firstSong = m_playlistModel->getAudioInfoAtIndex(0);
-        m_playlistModel->setCurrentSong(firstSong);
-        if (firstSong) {
-            emit requestAudioSourceChange(firstSong->audioSource());
+    switch (playMode) {
+    case PlayMode::RepeatOne:
+    case PlayMode::Loop: {
+        if (!currentSong) {
+            AudioInfo* firstSong = m_playlistModel->getAudioInfoAtIndex(0);
+            m_playlistModel->setCurrentSong(firstSong);
+            if (firstSong) {
+                emit requestAudioSourceChange(firstSong->audioSource());
+            }
+            return;
         }
-        return;
+
+        // Find current song index and switch to next
+        int currentIndex = -1;
+        for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
+            if (m_playlistModel->getAudioInfoAtIndex(i) == currentSong) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        int nextIndex = (currentIndex + 1) % m_playlistModel->rowCount();
+        AudioInfo* nextSong = m_playlistModel->getAudioInfoAtIndex(nextIndex);
+        m_playlistModel->setCurrentSong(nextSong);
+        if (nextSong) {
+            emit requestAudioSourceChange(nextSong->audioSource());
+        }
+        break;
     }
 
-    int currentIndex = -1;
-    for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
-        if (m_playlistModel->getAudioInfoAtIndex(i) == currentSong) {
-            currentIndex = i;
-            break;
+    case PlayMode::Shuffle: {
+        // Simplified shuffle: randomly select a song
+        int randomIndex = QRandomGenerator::global()->bounded(m_playlistModel->rowCount());
+        AudioInfo* randomSong = m_playlistModel->getAudioInfoAtIndex(randomIndex);
+        m_playlistModel->setCurrentSong(randomSong);
+        if (randomSong) {
+            emit requestAudioSourceChange(randomSong->audioSource());
         }
+        break;
     }
-
-    int nextIndex = (currentIndex + 1) % m_playlistModel->rowCount();
-    AudioInfo* nextSong = m_playlistModel->getAudioInfoAtIndex(nextIndex);
-    m_playlistModel->setCurrentSong(nextSong);
-    if (nextSong) {
-        emit requestAudioSourceChange(nextSong->audioSource());
     }
 }
+
 
 void PlaylistCoordinator::switchToPreviousSong()
 {
@@ -59,30 +80,47 @@ void PlaylistCoordinator::switchToPreviousSong()
         return;
     }
 
+    PlayMode playMode = m_playlistModel->playMode();
     AudioInfo* currentSong = m_playlistModel->currentSong();
 
-    if (!currentSong) {
-        AudioInfo* lastSong = m_playlistModel->getAudioInfoAtIndex(m_playlistModel->rowCount() - 1);
-        m_playlistModel->setCurrentSong(lastSong);
-        if (lastSong) {
-            emit requestAudioSourceChange(lastSong->audioSource());
+    switch (playMode) {
+    case PlayMode::RepeatOne:
+    case PlayMode::Loop: {
+        if (!currentSong) {
+            AudioInfo* lastSong = m_playlistModel->getAudioInfoAtIndex(m_playlistModel->rowCount() - 1);
+            m_playlistModel->setCurrentSong(lastSong);
+            if (lastSong) {
+                emit requestAudioSourceChange(lastSong->audioSource());
+            }
+            return;
         }
-        return;
+
+        int currentIndex = -1;
+        for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
+            if (m_playlistModel->getAudioInfoAtIndex(i) == currentSong) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        int prevIndex = (currentIndex - 1 + m_playlistModel->rowCount()) % m_playlistModel->rowCount();
+        AudioInfo* prevSong = m_playlistModel->getAudioInfoAtIndex(prevIndex);
+        m_playlistModel->setCurrentSong(prevSong);
+        if (prevSong) {
+            emit requestAudioSourceChange(prevSong->audioSource());
+        }
+        break;
     }
 
-    int currentIndex = -1;
-    for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
-        if (m_playlistModel->getAudioInfoAtIndex(i) == currentSong) {
-            currentIndex = i;
-            break;
+    case PlayMode::Shuffle: {
+        int randomIndex = QRandomGenerator::global()->bounded(m_playlistModel->rowCount());
+        AudioInfo* randomSong = m_playlistModel->getAudioInfoAtIndex(randomIndex);
+        m_playlistModel->setCurrentSong(randomSong);
+        if (randomSong) {
+            emit requestAudioSourceChange(randomSong->audioSource());
         }
+        break;
     }
-
-    int prevIndex = (currentIndex - 1 + m_playlistModel->rowCount()) % m_playlistModel->rowCount();
-    AudioInfo* prevSong = m_playlistModel->getAudioInfoAtIndex(prevIndex);
-    m_playlistModel->setCurrentSong(prevSong);
-    if (prevSong) {
-        emit requestAudioSourceChange(prevSong->audioSource());
     }
 }
 
@@ -159,6 +197,21 @@ void PlaylistCoordinator::onPlayFinished()
     if (!m_playlistModel) {
         return;
     }
+
+    PlayMode playMode = m_playlistModel->playMode();
+    switch (playMode) {
+    case PlayMode::RepeatOne:
+        if (m_playlistModel->currentSong()) {
+            emit requestAudioSourceChange(m_playlistModel->currentSong()->audioSource());
+        }
+        break;
+
+    case PlayMode::Loop:
+    case PlayMode::Shuffle:
+        switchToNextSong();
+        break;
+    }
+
 }
 
 

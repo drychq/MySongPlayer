@@ -37,6 +37,9 @@ PlayerController::PlayerController(QObject *parent)
     connect(m_audioPlayer, &AudioPlayer::positionChanged,
             this, &PlayerController::onPositionChanged);
 
+    connect(m_playlistModel, &PlaylistModel::playModeChanged,
+            this, &PlayerController::playModeChanged);
+
     connect(m_audioImporter, &AudioImporter::audioImported,
             this, &PlayerController::onAudioImported);
 
@@ -99,6 +102,27 @@ void PlayerController::setCurrentSong(AudioInfo *newCurrentSong)
 {
     m_currentSongManager->setCurrentSong(newCurrentSong);
 }
+
+PlayMode PlayerController::playMode() const
+{
+    return m_playlistModel->playMode();
+}
+
+void PlayerController::setPlayMode(PlayMode newMode)
+{
+    m_playlistModel->setPlayMode(newMode);
+}
+
+int PlayerController::playModeInt() const
+{
+    return static_cast<int>(m_playlistModel->playMode());
+}
+
+void PlayerController::setPlayModeInt(int newMode)
+{
+    m_playlistModel->setPlayMode(static_cast<PlayMode>(newMode));
+}
+
 
 void PlayerController::switchToNextSong()
 {

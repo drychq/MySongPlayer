@@ -9,6 +9,7 @@
 #include "interfaces/ICurrentSongManager.h"
 #include "interfaces/IPlaylistOperations.h"
 
+enum class PlayMode;
 
 class AudioPlayer;
 class AudioImporter;
@@ -26,6 +27,7 @@ class PlayerController : public QObject
     Q_PROPERTY(bool muted READ isMuted WRITE setMuted NOTIFY mutedChanged)
 
     Q_PROPERTY(AudioInfo* currentSong READ currentSong WRITE setCurrentSong NOTIFY currentSongChanged)
+    Q_PROPERTY(int playMode READ playModeInt WRITE setPlayModeInt NOTIFY playModeChanged)
 
 public:
     static QObject* provider(QQmlEngine *engine, QJSEngine *scriptEngine) {
@@ -48,6 +50,11 @@ public:
     AudioInfo *currentSong() const;
     void setCurrentSong(AudioInfo *newCurrentSong);
 
+    PlayMode playMode() const;
+    void setPlayMode(PlayMode newMode);
+
+    int playModeInt() const;
+    void setPlayModeInt(int newMode);
 
     Q_INVOKABLE void playPause();
     Q_INVOKABLE void setPosition(qint64 newPosition);
@@ -81,6 +88,7 @@ signals:
     void volumeChanged();
     void mutedChanged();
     void duplicateAudioSkipped(const QString& title, const QString& reason);
+    void playModeChanged();
 
 private slots:
     void onAudioSourceChangeRequested(const QUrl &source);
