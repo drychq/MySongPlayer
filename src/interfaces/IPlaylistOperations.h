@@ -1,3 +1,4 @@
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #pragma once
 
 #include <QObject>
@@ -6,15 +7,6 @@
 
 class PlaylistModel;
 
-/**
- * @brief Playlist Operations Interface
- *
- * Focuses on data management functions for the playlist.
- * This interface follows the Interface Segregation Principle and only includes responsibilities related to playlist operations:
- * - Playlist modification operations (add, remove, clear)
- * - Playlist data access
- * - Playlist model retrieval
- */
 class IPlaylistOperations
 {
 public:

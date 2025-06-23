@@ -1,10 +1,8 @@
-#include "AudioInfo.h"
+#include "models/AudioInfo.h"
 
 AudioInfo::AudioInfo(QObject *parent)
     : QObject{parent}
-{
-
-}
+{}
 
 int AudioInfo::songIndex() const
 {

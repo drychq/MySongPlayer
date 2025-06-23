@@ -1,3 +1,4 @@
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #include "controllers/PlayerController.h"
 #include "controllers/AudioPlayer.h"
 #include "coordinators/PlaylistCoordinator.h"
@@ -10,10 +11,16 @@ PlayerController::PlayerController(QObject *parent)
     , m_audioPlayer{new AudioPlayer(this)}
     , m_playlistModel{new PlaylistModel(this)}
     , m_audioImporter{new AudioImporter(this)}
+    , m_playlistStorageService(new PlaylistStorageService(this))
 {
-    auto* playlistCoordinator = new PlaylistCoordinator(m_playlistModel, this);
+    if (!m_playlistStorageService->initialize()) {
+        qCritical() << "Playlist storage service initialization failed:" << m_playlistStorageService->lastError();
+    }
+
+    auto* playlistCoordinator = new PlaylistCoordinator(m_playlistModel, m_playlistStorageService, this);
     m_currentSongManager = qobject_cast<ICurrentSongManager*>(playlistCoordinator);
     m_playlistOperations = qobject_cast<IPlaylistOperations*>(playlistCoordinator);
+    m_playlistPersistence = qobject_cast<IPlaylistPersistence*>(playlistCoordinator);
 
     connect(playlistCoordinator, &PlaylistCoordinator::requestAudioSourceChange,
             this, &PlayerController::onAudioSourceChangeRequested);
@@ -46,6 +53,16 @@ PlayerController::PlayerController(QObject *parent)
     connect(m_playlistModel, &PlaylistModel::duplicateAudioSkipped,
             this, &PlayerController::duplicateAudioSkipped);
 
+    connect(m_playlistModel, &PlaylistModel::rowsInserted,
+            this, &PlayerController::onPlaylistChanged);
+    connect(m_playlistModel, &PlaylistModel::rowsRemoved,
+            this, &PlayerController::onPlaylistChanged);
+    connect(m_playlistModel, &PlaylistModel::currentSongChanged,
+            this, &PlayerController::onPlaylistChanged);
+    connect(m_playlistModel, &PlaylistModel::playModeChanged,
+            this, &PlayerController::onPlaylistChanged);
+
+    loadDefaultPlaylistOnStartup();
 }
 
 bool PlayerController::playing() const
@@ -161,6 +178,36 @@ QList<QObject*> PlayerController::getPlaylistAudioInfoList() const
     return m_playlistOperations->getPlaylistAudioInfoList();
 }
 
+bool PlayerController::saveCurrentPlaylist(const QString &playlistName)
+{
+    return m_playlistPersistence->saveCurrentPlaylist(playlistName);
+}
+
+bool PlayerController::loadPlaylist(const QString &playlistName)
+{
+    return m_playlistPersistence->loadPlaylist(playlistName);
+}
+
+QStringList PlayerController::getAllPlaylistNames() const
+{
+    return m_playlistPersistence->getAllPlaylistNames();
+}
+
+bool PlayerController::deletePlaylist(const QString &playlistName)
+{
+    return m_playlistPersistence->deletePlaylist(playlistName);
+}
+
+bool PlayerController::renamePlaylist(const QString &oldName, const QString &newName)
+{
+    return m_playlistPersistence->renamePlaylist(oldName, newName);
+}
+
+QString PlayerController::currentPlaylistName() const
+{
+    return m_playlistPersistence->currentPlaylistName();
+}
+
 void PlayerController::importLocalAudio(const QList<QUrl> &fileUrls)
 {
     qDebug() << "PlayerController: Starting local audio import for" << fileUrls.size() << "files";
@@ -208,5 +255,37 @@ void PlayerController::onCurrentSongChanged()
 void PlayerController::onPositionChanged()
 {
     qint64 currentPosition = m_audioPlayer->position();
+}
+
+void PlayerController::onPlaylistChanged()
+{
+    static QTimer* saveTimer = nullptr;
+    if (!saveTimer) {
+        saveTimer = new QTimer(this);
+        saveTimer->setSingleShot(true);
+        saveTimer->setInterval(2000);
+        connect(saveTimer, &QTimer::timeout, this, [this]() {
+            bool success = m_playlistPersistence->saveCurrentPlaylist("Default Playlist");
+            if (success) {
+                qDebug() << "PlayerController: Playlist auto-save successful";
+            } else {
+                qWarning() << "PlayerController: Playlist auto-save failed:" << m_playlistPersistence->storageService()->lastError();
+            }
+        });
+    }
+
+    saveTimer->start();
+}
+
+void PlayerController::loadDefaultPlaylistOnStartup()
+{
+    QTimer::singleShot(100, this, [this]() {
+        bool success = m_playlistPersistence->loadPlaylist("Default Playlist");
+        if (success) {
+            qInfo() << "Default playlist loaded successfully";
+        } else {
+            qDebug() << "Default playlist not found or empty, will create new default playlist";
+        }
+    });
 }
 

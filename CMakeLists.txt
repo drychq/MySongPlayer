@@ -7,8 +7,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS Quick Multimedia Sql)
-find_package(Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt6 REQUIRED COMPONENTS Core)
 
 qt_standard_project_setup()
 
@@ -88,18 +86,22 @@ qt_add_qml_module(appMySongPlayer
         assets/icons/medium_icon.png
 
         README.md
-        SOURCES src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
 )
+
 target_sources(appMySongPlayer PRIVATE
     src/controllers/PlayerController.cpp src/controllers/PlayerController.h
     src/controllers/AudioPlayer.cpp src/controllers/AudioPlayer.h
     src/models/AudioInfo.cpp src/models/AudioInfo.h
     src/models/AudioSearchModel.cpp src/models/AudioSearchModel.h
     src/models/PlaylistModel.h src/models/PlaylistModel.cpp
+    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
     src/services/AudioImporter.h src/services/AudioImporter.cpp
+    src/services/PlaylistStorageService.h src/services/PlaylistStorageService.cpp
     src/interfaces/ICurrentSongManager.h
     src/interfaces/IPlaylistOperations.h
+    src/interfaces/IPlaylistPersistence.h
     src/coordinators/PlaylistCoordinator.h src/coordinators/PlaylistCoordinator.cpp
+    src/storage/PlaylistDatabase.h src/storage/PlaylistDatabase.cpp
 )
 
 set_target_properties(appMySongPlayer PROPERTIES
@@ -116,8 +118,6 @@ target_link_libraries(appMySongPlayer PRIVATE
     Qt6::Sql
     TAGLIB::taglib
 )
-target_link_libraries(appMySongPlayer PRIVATE Qt6::Core)
-target_link_libraries(appMySongPlayer PRIVATE Qt6::Core)
 
 install(TARGETS appMySongPlayer
     BUNDLE DESTINATION .

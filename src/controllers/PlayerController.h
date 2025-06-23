@@ -1,3 +1,4 @@
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-23
 #pragma once
 
 #include <QObject>
@@ -8,6 +9,8 @@
 #include "models/PlaylistModel.h"
 #include "interfaces/ICurrentSongManager.h"
 #include "interfaces/IPlaylistOperations.h"
+#include "interfaces/IPlaylistPersistence.h"
+#include "services/PlaylistStorageService.h"
 
 enum class PlayMode;
 
@@ -80,6 +83,13 @@ public:
     Q_INVOKABLE PlaylistModel* playlistModel() const;
     Q_INVOKABLE QList<QObject*> getPlaylistAudioInfoList() const;
 
+    Q_INVOKABLE bool saveCurrentPlaylist(const QString &playlistName = QString());
+    Q_INVOKABLE bool loadPlaylist(const QString &playlistName);
+    Q_INVOKABLE QStringList getAllPlaylistNames() const;
+    Q_INVOKABLE bool deletePlaylist(const QString &playlistName);
+    Q_INVOKABLE bool renamePlaylist(const QString &oldName, const QString &newName);
+    Q_INVOKABLE QString currentPlaylistName() const;
+
 signals:
     void playingChanged();
     void currentSongChanged();
@@ -99,6 +109,9 @@ private slots:
     void onCurrentSongChanged();
     void onPositionChanged();
 
+    void onPlaylistChanged();
+    void loadDefaultPlaylistOnStartup();
+
 private:
     AudioPlayer *m_audioPlayer;
     PlaylistModel *m_playlistModel;
@@ -106,4 +119,7 @@ private:
 
     ICurrentSongManager *m_currentSongManager;
     IPlaylistOperations *m_playlistOperations;
+    IPlaylistPersistence *m_playlistPersistence;
+
+    PlaylistStorageService *m_playlistStorageService;
 };

@@ -1,15 +1,13 @@
-#include "PlaylistSearchModel.h"
+#include "models/PlaylistSearchModel.h"
 #include <QSet>
 
 PlaylistSearchModel::PlaylistSearchModel(QObject *parent)
     : QAbstractListModel(parent)
     , m_isSearching(false)
-{
-}
+{}
 
 PlaylistSearchModel::~PlaylistSearchModel()
-{
-}
+{}
 
 int PlaylistSearchModel::rowCount(const QModelIndex &parent) const
 {

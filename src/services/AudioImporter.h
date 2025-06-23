@@ -1,3 +1,4 @@
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #pragma once
 
 #include <QObject>

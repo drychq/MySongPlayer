@@ -1,3 +1,4 @@
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #include "models/PlaylistModel.h"
 
 PlaylistModel::PlaylistModel(QObject *parent)
@@ -126,9 +127,9 @@ void PlaylistModel::removeAudio(int index)
             if (m_audioList.size() > 1) {
                 AudioInfo* newCurrentSong = nullptr;
                 if (index < m_audioList.size() - 1) {
-                    setCurrentSong(m_audioList[index + 1]);
+                    newCurrentSong = m_audioList[index + 1];
                 } else {
-                    setCurrentSong(m_audioList[index - 1]);
+                    newCurrentSong = m_audioList[index - 1];
                 }
                 setCurrentSong(newCurrentSong);
             } else {

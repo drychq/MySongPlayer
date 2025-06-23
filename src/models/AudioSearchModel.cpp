@@ -1,5 +1,5 @@
-#include "AudioSearchModel.h"
-#include "AudioInfo.h"
+#include "models/AudioSearchModel.h"
+#include "models/AudioInfo.h"
 #include <QJsonDocument>
 #include <QNetworkReply>
 #include <QUrlQuery>
@@ -13,8 +13,7 @@ namespace {
 
 AudioSearchModel::AudioSearchModel(QObject *parent)
     : QAbstractListModel(parent)
-{
-}
+{}
 
 int AudioSearchModel::rowCount(const QModelIndex &parent) const
 {
