@@ -88,6 +88,7 @@ qt_add_qml_module(appMySongPlayer
         assets/icons/medium_icon.png
 
         README.md
+        SOURCES src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
 )
 target_sources(appMySongPlayer PRIVATE
     src/controllers/PlayerController.cpp src/controllers/PlayerController.h

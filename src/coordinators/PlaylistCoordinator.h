@@ -5,6 +5,8 @@
 #include "interfaces/ICurrentSongManager.h"
 #include "interfaces/IPlaylistOperations.h"
 
+class PlaylistModel;
+class AudioInfo;
 
 class PlaylistCoordinator : public QObject, public ICurrentSongManager, public IPlaylistOperations
 {
