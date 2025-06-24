@@ -86,30 +86,32 @@ qt_add_qml_module(appMySongPlayer
         assets/icons/medium_icon.png
 
         README.md
-
-
 )
 
 target_sources(appMySongPlayer PRIVATE
     src/controllers/PlayerController.cpp src/controllers/PlayerController.h
     src/controllers/AudioPlayer.cpp src/controllers/AudioPlayer.h
+
     src/models/AudioInfo.cpp src/models/AudioInfo.h
     src/models/AudioSearchModel.cpp src/models/AudioSearchModel.h
     src/models/PlaylistModel.h src/models/PlaylistModel.cpp
     src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
+    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
+    src/models/LyricsModel.h src/models/LyricsModel.cpp
+    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
+
     src/services/AudioImporter.h src/services/AudioImporter.cpp
     src/services/PlaylistStorageService.h src/services/PlaylistStorageService.cpp
+    src/services/LyricsService.h src/services/LyricsService.cpp
+    src/services/LyricsService.h src/services/LyricsService.cpp
+
     src/interfaces/ICurrentSongManager.h
     src/interfaces/IPlaylistOperations.h
     src/interfaces/IPlaylistPersistence.h
-    src/coordinators/PlaylistCoordinator.h src/coordinators/PlaylistCoordinator.cpp
-    src/storage/PlaylistDatabase.h src/storage/PlaylistDatabase.cpp
-    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
-    src/models/LyricsModel.h src/models/LyricsModel.cpp
-    src/services/LyricsService.h src/services/LyricsService.cpp
-    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
-    src/services/LyricsService.h src/services/LyricsService.cpp
 
+    src/coordinators/PlaylistCoordinator.h src/coordinators/PlaylistCoordinator.cpp
+
+    src/storage/PlaylistDatabase.h src/storage/PlaylistDatabase.cpp
 )
 
 set_target_properties(appMySongPlayer PROPERTIES

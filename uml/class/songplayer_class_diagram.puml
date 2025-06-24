@@ -1,0 +1,39 @@
+@startuml MySongPlayer Domain Model
+
+class AudioInfo {
+    - songIndex: int
+    - title: String
+    - authorName: String
+    - imageSource: String
+    - videoSource: String
+    - audioSource: String
+}
+
+class PlaylistModel {
+    - currentSongIndex: int
+    - playMode: PlayMode
+}
+
+class LyricsModel {
+    - hasLyrics: boolean
+    - currentLyric: String
+    - showLyrics: boolean
+    - currentLineIndex: int
+}
+
+class LyricLine {
+    - timestamp: long
+    - text: String
+}
+
+enum PlayMode {
+    Loop
+    Shuffle
+    RepeatOne
+}
+
+PlaylistModel "1" *-- "0..*" AudioInfo : songs
+PlaylistModel "1" -- "1" PlayMode : playMode
+LyricsModel "1" *-- "0..*" LyricLine : lyrics
+
+@enduml

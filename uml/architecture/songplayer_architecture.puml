@@ -1,0 +1,37 @@
+@startuml
+actor User
+
+rectangle "My SongPlayer Application" {
+    component "UI Component" as UI
+    component "Audio Playback Management" as Player
+    component "Playlist Management" as Playlist
+    component "Audio Import Processing" as Import
+    component "Lyrics Management" as Lyrics
+    component "Data Persistence\n(Serialization Façade)" as Storage
+}
+
+database "SQLite Database" as DB
+folder "File System" as FS
+component "TagLib Library" as TagLib
+
+User --> UI : Interacts with interface
+UI --> Player : Controls playback
+UI --> Playlist : Manages playlists
+UI --> Import : Triggers import
+UI --> Lyrics : Requests lyrics
+
+Player --> Playlist : Gets current song
+Player --> Lyrics : Fetches synced lyrics
+
+Playlist --> Storage : Save/load playlists
+Playlist ..> Player : <<event>> songChanged()
+
+Import --> FS : Reads audio files
+Import --> TagLib : Extracts metadata
+Import --> Playlist : Adds imported songs
+
+Lyrics --> FS : Reads .lrc files
+Lyrics --> Storage : (optional cache)
+
+Storage --> DB : Persists data
+@enduml

@@ -1,0 +1,67 @@
+@startuml
+title MySongPlayer - 用户播放歌曲时序图 
+
+actor User as "用户"
+participant "Presentation Layer" as View
+participant "Application Controller" as Controller
+participant "Playlist Coordinator" as Coordinator
+participant "Media Player" as Player
+
+User -> View: 点击播放按钮
+activate View
+
+View -> Controller: playPause()
+activate Controller
+
+alt 当前未播放
+    Controller -> Controller: 检查播放状态
+    
+    Controller -> Coordinator: getCurrentSong()
+    activate Coordinator
+    
+    alt 有可播放歌曲
+        Coordinator --> Controller: 返回当前歌曲信息
+        deactivate Coordinator
+        
+        Controller -> Player: initiateMediaPlayback()
+        activate Player
+        
+        alt 播放成功
+            Player --> Controller: playbackStarted()
+            deactivate Player
+            
+            Controller --> View: 更新播放状态
+            View --> User: 显示正在播放
+            
+            note right of User: 音乐开始播放，UI显示播放状态
+            
+        else 播放失败
+            Player --> Controller: 播放错误信息
+            deactivate Player
+            
+            Controller --> View: 显示错误状态
+            View --> User: 提示播放失败
+        end
+        
+    else 没有可播放歌曲
+        Coordinator --> Controller: 播放列表为空
+        deactivate Coordinator
+        
+        Controller --> View: 显示空列表提示
+        View --> User: 提示添加歌曲
+    end
+    
+else 当前正在播放
+    Controller -> Player: pauseMediaPlayback()
+    activate Player
+    Player --> Controller: playbackPaused()
+    deactivate Player
+    
+    Controller --> View: 更新为暂停状态
+    View --> User: 显示暂停状态
+end
+
+deactivate Controller
+deactivate View
+
+@enduml 

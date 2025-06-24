@@ -1,0 +1,21 @@
+@startuml
+left to right direction
+
+actor "听众" as user
+
+rectangle "音乐播放器" {
+  usecase "控制音乐播放" as UC1
+  usecase "管理播放列表" as UC2
+  usecase "搜索歌曲" as UC3
+  usecase "导入音频文件" as UC4
+  usecase "查看歌词" as UC5
+}
+
+user -- UC1
+user -- UC2
+user -- UC3
+user -- UC4
+user -- UC5
+
+UC1 <|-- UC5 : <<extend>>
+@enduml

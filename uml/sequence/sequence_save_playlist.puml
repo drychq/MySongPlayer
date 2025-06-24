@@ -1,0 +1,56 @@
+@startuml
+title MySongPlayer - 播放列表持久化保存时序图 
+
+actor User as "用户"
+participant "Presentation Layer" as View
+participant "Application Controller" as Controller
+participant "Playlist Coordinator" as Coordinator
+participant "Persistence Service" as Storage
+
+User -> View: 保存播放列表
+activate View
+
+View -> Controller: persistPlaylistData()
+activate Controller
+
+Controller -> Coordinator: preparePlaylistPersistence()
+activate Coordinator
+
+Coordinator -> Storage: executeDataPersistence()
+activate Storage
+
+Storage -> Storage: serializePlaylistData()
+note right of Storage: 序列化播放列表数据\n包括歌曲信息和顺序
+
+alt 保存操作成功
+    Storage -> Storage: 持久化到数据库
+    Storage --> Coordinator: 保存成功确认
+    deactivate Storage
+    
+    Coordinator -> Coordinator: 更新当前播放列表状态
+    Coordinator --> Controller: 播放列表已保存
+    deactivate Coordinator
+    
+    Controller --> View: 保存成功通知
+    View --> User: 显示保存成功消息
+    
+    note right of User: 播放列表已安全保存到本地数据库
+
+else 保存操作失败
+    Storage -> Storage: 处理保存错误
+    Storage --> Coordinator: 保存失败信息
+    deactivate Storage
+    
+    Coordinator --> Controller: 保存失败通知
+    deactivate Coordinator
+    
+    Controller --> View: 显示错误信息
+    View --> User: 提示保存失败，建议重试
+    
+    note right of User: 可能的原因：磁盘空间不足、\n权限问题或数据库连接异常
+end
+
+deactivate Controller
+deactivate View
+
+@enduml 

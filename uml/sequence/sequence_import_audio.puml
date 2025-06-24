@@ -1,0 +1,59 @@
+@startuml
+title MySongPlayer - 用户导入音乐文件时序图 
+
+actor User as "用户"
+participant "Presentation Layer" as View
+participant "Application Controller" as Controller
+participant "Media Import Service" as Importer
+participant "Playlist Domain Model" as Model
+
+User -> View: 选择音乐文件
+activate View
+
+View -> Controller: processMediaImport()
+activate Controller
+
+Controller -> Importer: initiateMediaProcessing()
+activate Importer
+
+loop 每个音频文件
+    Importer -> Importer: 解析音频元数据
+    note right of Importer: 提取标题、艺术家、封面等信息
+    
+    alt 文件解析成功
+        Importer -> Model: 检查重复文件
+        activate Model
+        Model --> Importer: 重复检查结果
+        deactivate Model
+        
+        alt 非重复文件
+            Importer --> Controller: mediaMetadataExtracted()
+            Controller -> Model: addToPlaylistCollection()
+            activate Model
+            Model --> Controller: 添加成功
+            Model --> View: 播放列表更新
+            deactivate Model
+            
+        else 重复文件
+            Importer --> Controller: 跳过重复文件
+            Controller --> User: 显示跳过提示
+        end
+        
+    else 文件解析失败
+        Importer --> Controller: 文件不支持或损坏
+        Controller --> User: 显示错误提示
+    end
+end
+
+Importer --> Controller: 导入过程完成
+deactivate Importer
+
+Controller --> View: 导入结果统计
+deactivate Controller
+
+View --> User: 显示导入完成信息
+deactivate View
+
+note over User, Model: 成功导入的音频文件已添加到播放列表，\n用户可以开始播放音乐
+
+@enduml 

@@ -1,0 +1,61 @@
+@startuml
+title MySongPlayer - 用户搜索并播放歌曲时序图 
+
+actor User as "用户"
+participant "Search Interface" as SearchPanel
+participant "Search Service" as SearchModel
+participant "Application Controller" as Controller
+participant "Media Player" as Player
+
+User -> SearchPanel: 输入搜索关键词
+activate SearchPanel
+
+SearchPanel -> SearchModel: performContentSearch()
+activate SearchModel
+
+SearchModel -> SearchModel: executeSearchQuery()
+note right of SearchModel: 在播放列表中搜索\n匹配标题、艺术家等信息
+
+alt 找到匹配歌曲
+    SearchModel --> SearchPanel: 返回搜索结果
+    SearchPanel --> User: 显示匹配的歌曲列表
+    
+    User -> SearchPanel: 选择要播放的歌曲
+    SearchPanel -> Controller: requestMediaPlayback()
+    activate Controller
+    
+    Controller -> Controller: setCurrentMediaSelection()
+    
+    Controller -> Player: initiateSelectedMediaPlayback()
+    activate Player
+    
+    alt 播放成功
+        Player --> Controller: 播放开始确认
+        deactivate Player
+        
+        Controller --> SearchPanel: 播放状态更新
+        SearchPanel --> User: 显示正在播放状态
+        
+        note right of User: 搜索到的歌曲开始播放\n可以继续搜索或关闭搜索面板
+        
+    else 播放失败
+        Player --> Controller: 播放错误信息
+        deactivate Player
+        
+        Controller --> SearchPanel: 播放失败通知
+        SearchPanel --> User: 提示播放失败
+    end
+    
+    deactivate Controller
+
+else 没有找到匹配歌曲
+    SearchModel --> SearchPanel: 空搜索结果
+    SearchPanel --> User: 显示无匹配结果
+    
+    note right of User: 建议：\n- 尝试不同的关键词\n- 检查拼写\n- 确认歌曲已添加到播放列表
+end
+
+deactivate SearchModel
+deactivate SearchPanel
+
+@enduml 
