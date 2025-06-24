@@ -6,7 +6,7 @@ import MySongPlayer
 Item {
     id: root
 
-    //property LyricsModel lyricsModel: null
+    property LyricsModel lyricsModel: null
     property color primaryTextColor: AppStyles.textPrimary
     property color highlightTextColor: AppStyles.primaryColor
     property color secondaryTextColor: AppStyles.textSecondary

@@ -86,9 +86,8 @@ qt_add_qml_module(appMySongPlayer
         assets/icons/medium_icon.png
 
         README.md
-        SOURCES src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
-        SOURCES src/models/lyricsmodel.h src/models/lyricsmodel.cpp
-        SOURCES src/services/lyricsservice.h src/services/lyricsservice.cpp
+
+
 )
 
 target_sources(appMySongPlayer PRIVATE
@@ -105,6 +104,12 @@ target_sources(appMySongPlayer PRIVATE
     src/interfaces/IPlaylistPersistence.h
     src/coordinators/PlaylistCoordinator.h src/coordinators/PlaylistCoordinator.cpp
     src/storage/PlaylistDatabase.h src/storage/PlaylistDatabase.cpp
+    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
+    src/models/LyricsModel.h src/models/LyricsModel.cpp
+    src/services/LyricsService.h src/services/LyricsService.cpp
+    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
+    src/services/LyricsService.h src/services/LyricsService.cpp
+
 )
 
 set_target_properties(appMySongPlayer PROPERTIES

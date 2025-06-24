@@ -11,6 +11,8 @@ PlayerController::PlayerController(QObject *parent)
     , m_audioPlayer{new AudioPlayer(this)}
     , m_playlistModel{new PlaylistModel(this)}
     , m_audioImporter{new AudioImporter(this)}
+    , m_lyricsService{new LyricsService(this)}
+    , m_lyricsModel{new LyricsModel(this)}
     , m_playlistStorageService(new PlaylistStorageService(this))
 {
     if (!m_playlistStorageService->initialize()) {
@@ -249,12 +251,27 @@ void PlayerController::onCurrentSongChanged()
     } else {
         AudioInfo* currentSong = m_currentSongManager->currentSong();
         QString audioFilePath = currentSong->audioSource().toLocalFile();
+
+        if (!audioFilePath.isEmpty()) {
+            QList<LyricsService::LyricLine> lyrics = m_lyricsService->parseLrcFile(audioFilePath);
+            m_lyricsModel->setLyrics(lyrics);
+
+            qDebug() << "PlayerController: Song switched, loading lyrics:" << currentSong->title()
+                     << "lyrics lines:" << lyrics.size()
+                     << "showLyrics initial state:" << m_lyricsModel->showLyrics();
+        }
     }
 }
 
 void PlayerController::onPositionChanged()
 {
     qint64 currentPosition = m_audioPlayer->position();
+    m_lyricsModel->updateCurrentPosition(currentPosition);
+}
+
+LyricsModel* PlayerController::lyricsModel() const
+{
+    return m_lyricsModel;
 }
 
 void PlayerController::onPlaylistChanged()

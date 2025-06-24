@@ -6,6 +6,7 @@
 #include <QtGui/QGuiApplication>
 #include <QtQml/QQmlEngine>
 #include <QtQml/QJSEngine>
+#include "models/LyricsModel.h"
 #include "models/PlaylistModel.h"
 #include "interfaces/ICurrentSongManager.h"
 #include "interfaces/IPlaylistOperations.h"
@@ -16,6 +17,8 @@ enum class PlayMode;
 
 class AudioPlayer;
 class AudioImporter;
+class LyricsService;
+class PlaylistStorageService;
 
 class PlayerController : public QObject
 {
@@ -31,6 +34,8 @@ class PlayerController : public QObject
 
     Q_PROPERTY(AudioInfo* currentSong READ currentSong WRITE setCurrentSong NOTIFY currentSongChanged)
     Q_PROPERTY(int playMode READ playModeInt WRITE setPlayModeInt NOTIFY playModeChanged)
+
+    Q_PROPERTY(LyricsModel* lyricsModel READ lyricsModel CONSTANT)
 
 public:
     static QObject* provider(QQmlEngine *engine, QJSEngine *scriptEngine) {
@@ -90,6 +95,8 @@ public:
     Q_INVOKABLE bool renamePlaylist(const QString &oldName, const QString &newName);
     Q_INVOKABLE QString currentPlaylistName() const;
 
+    LyricsModel* lyricsModel() const;
+
 signals:
     void playingChanged();
     void currentSongChanged();
@@ -122,4 +129,7 @@ private:
     IPlaylistPersistence *m_playlistPersistence;
 
     PlaylistStorageService *m_playlistStorageService;
+
+    LyricsService *m_lyricsService;
+    LyricsModel *m_lyricsModel;
 };
