@@ -86,6 +86,9 @@ qt_add_qml_module(appMySongPlayer
         assets/icons/medium_icon.png
 
         README.md
+        SOURCES src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
+        SOURCES src/models/lyricsmodel.h src/models/lyricsmodel.cpp
+        SOURCES src/services/lyricsservice.h src/services/lyricsservice.cpp
 )
 
 target_sources(appMySongPlayer PRIVATE
@@ -118,6 +121,7 @@ target_link_libraries(appMySongPlayer PRIVATE
     Qt6::Sql
     TAGLIB::taglib
 )
+
 
 install(TARGETS appMySongPlayer
     BUNDLE DESTINATION .
