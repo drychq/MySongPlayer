@@ -88,6 +88,3 @@ assets/images/*
 assets/videos/*
 assets/audio/*
 out/*
-
-# Bash script
-*.sh

@@ -10,6 +10,24 @@
 #include <memory>
 #include <QDebug>
 
+namespace {
+    QUrl normalizeImagePath(const QString& originalPath) {
+        if (originalPath.isEmpty()) {
+            return QUrl("qrc:/qt/qml/MySongPlayer/assets/icons/app_icon.png");
+        }
+        
+        if (originalPath.startsWith("qrc:/qt/qml/MySongPlayer/")) {
+            return QUrl(originalPath);
+        }
+        
+        if (originalPath.contains("app_icon.png")) {
+            return QUrl("qrc:/qt/qml/MySongPlayer/assets/icons/app_icon.png");
+        }
+        
+        return QUrl(originalPath);
+    }
+}
+
 PlaylistStorageService::PlaylistStorageService(QObject *parent)
     : QObject(parent)
     , m_database(nullptr)
@@ -42,6 +60,8 @@ bool PlaylistStorageService::initialize()
         emit errorOccurred(m_lastError);
         return false;
     }
+
+
 
     m_initialized = true;
     emit initializationChanged(true);
@@ -365,7 +385,7 @@ QList<AudioInfo*> PlaylistStorageService::loadAudioItemsForPlaylist(int playlist
         audioInfo->setTitle(query.value("title").toString());
         audioInfo->setAuthorName(query.value("author_name").toString());
         audioInfo->setAudioSource(QUrl(query.value("audio_source").toString()));
-        audioInfo->setImageSource(QUrl(query.value("image_source").toString()));
+        audioInfo->setImageSource(normalizeImagePath(query.value("image_source").toString()));
         audioInfo->setVideoSource(QUrl(query.value("video_source").toString()));
         audioInfo->setSongIndex(query.value("position").toInt());
 
@@ -511,3 +531,5 @@ bool PlaylistStorageService::checkInitialized()
     }
     return true;
 }
+
+

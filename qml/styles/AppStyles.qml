@@ -1,5 +1,5 @@
 /*
- Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
+ Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-25
  This file defines the global application theme, including colors, fonts, and layout constants.
  To be used as a singleton throughout the application for consistent styling.
 */
@@ -55,25 +55,27 @@ QtObject {
         pixelSize: 10
     })
     
-    readonly property string playIcon: "/MySongPlayer/assets/icons/play_icon.png"
-    readonly property string pauseIcon: "/MySongPlayer/assets/icons/pause_icon.png"
-    readonly property string previousIcon: "/MySongPlayer/assets/icons/previous_icon.png"
-    readonly property string nextIcon: "/MySongPlayer/assets/icons/next_icon.png"
+    readonly property string playIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/play_icon.png"
+    readonly property string pauseIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/pause_icon.png"
+    readonly property string previousIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/previous_icon.png"
+    readonly property string nextIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/next_icon.png"
 
-    readonly property string listCycleIcon: "/MySongPlayer/assets/icons/list_cycle_icon.png"
-    readonly property string randomIcon: "/MySongPlayer/assets/icons/random_icon.png"
-    readonly property string repeatOneIcon: "/MySongPlayer/assets/icons/repeat_icon.png"
+    readonly property string listCycleIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/list_cycle_icon.png"
+    readonly property string randomIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/random_icon.png"
+    readonly property string repeatOneIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/repeat_icon.png"
 
-    readonly property string volumeHighIcon: "/MySongPlayer/assets/icons/high_icon.png"
-    readonly property string volumeLowIcon: "/MySongPlayer/assets/icons/low_icon.png"
-    readonly property string volumeMuteIcon: "/MySongPlayer/assets/icons/mute_icon.png"
-    readonly property string volumeMedium: "/MySongPlayer/assets/icons/medium_icon.png"
+    readonly property string volumeHighIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/high_icon.png"
+    readonly property string volumeLowIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/low_icon.png"
+    readonly property string volumeMuteIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/mute_icon.png"
+    readonly property string volumeMedium: "qrc:/qt/qml/MySongPlayer/assets/icons/medium_icon.png"
 
-    readonly property string searchIcon: "/MySongPlayer/assets/icons/search_icon.png"
-    readonly property string menuIcon: "/MySongPlayer/assets/icons/menu_icon.png"
-    readonly property string addIcon: "/MySongPlayer/assets/icons/add_icon.png"
-    readonly property string closeIcon: "/MySongPlayer/assets/icons/close_icon.png"
-    readonly property string trashIcon: "/MySongPlayer/assets/icons/trash_icon.png"
+    readonly property string searchIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/search_icon.png"
+    readonly property string menuIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/menu_icon.png"
+    readonly property string addIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/add_icon.png"
+    readonly property string closeIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/close_icon.png"
+    readonly property string trashIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/trash_icon.png"
+    
+    readonly property string appIcon: "qrc:/qt/qml/MySongPlayer/assets/icons/app_icon.png"
     
     // Animation configuration
     readonly property int shortAnimation: 100

@@ -114,4 +114,5 @@ private:
     PlaylistInfo playlistInfoFromQuery(const QSqlQuery &query);
     QList<AudioInfo*> loadAudioItemsForPlaylist(int playlistId);
     bool checkInitialized();
+
 };

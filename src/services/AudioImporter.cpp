@@ -15,7 +15,7 @@
 
 namespace {
     constexpr const char* DEFAULT_ARTIST = "Unknown Artist";
-    constexpr const char* DEFAULT_ICON_PATH = "/MySongPlayer/assets/icons/app_icon.png";
+    constexpr const char* DEFAULT_ICON_PATH = "qrc:/qt/qml/MySongPlayer/assets/icons/app_icon.png";
     constexpr const char* COVERS_DIR = "/covers";
     constexpr const char* COVER_SUFFIX = "_cover.jpg";
 

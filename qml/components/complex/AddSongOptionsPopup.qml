@@ -1,8 +1,7 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-25
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Effects
 import MySongPlayer
 
 Popup {
@@ -23,17 +22,7 @@ Popup {
         color: AppStyles.surfaceColor
         radius: 8
         border.color: AppStyles.primaryColor
-        border.width: 1
-        
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowHorizontalOffset: 0
-            shadowVerticalOffset: 4
-            shadowBlur: 0.6
-            shadowOpacity: 0.25
-            shadowColor: AppStyles.shadowColor
-        }
+        border.width: 2
     }
     
     ColumnLayout {

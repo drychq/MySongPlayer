@@ -1,14 +1,18 @@
-cmake_minimum_required(VERSION 4.0.0)
+cmake_minimum_required(VERSION 3.28)
 
+project(MySongPlayer VERSION 1.0.0 LANGUAGES CXX)
 
-project(MySongPlayer VERSION 0.1 LANGUAGES CXX)
-
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Quick Multimedia Sql)
+set(APP_NAME ${PROJECT_NAME})
 
-qt_standard_project_setup()
+find_package(Qt6 REQUIRED COMPONENTS Quick Multimedia Sql)
+
+qt_standard_project_setup(REQUIRES 6.8)
 
 find_package(PkgConfig REQUIRED)
 
@@ -17,7 +21,6 @@ pkg_check_modules(TAGLIB REQUIRED taglib)
 add_library(TAGLIB::taglib INTERFACE IMPORTED)
 target_include_directories(TAGLIB::taglib INTERFACE ${TAGLIB_INCLUDE_DIRS})
 target_link_libraries(TAGLIB::taglib INTERFACE ${TAGLIB_LIBRARIES})
-
 
 qt_add_executable(appMySongPlayer
     src/main.cpp
@@ -114,12 +117,15 @@ target_sources(appMySongPlayer PRIVATE
     src/storage/PlaylistDatabase.h src/storage/PlaylistDatabase.cpp
 )
 
+
 set_target_properties(appMySongPlayer PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.myawesomeapp
+    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+    MACOSX_BUNDLE_ICON_FILE "app_icon.icns"
     WIN32_EXECUTABLE TRUE
+    RESOURCE assets/icons/app_icon.ico
 )
 
 target_link_libraries(appMySongPlayer PRIVATE
@@ -130,7 +136,33 @@ target_link_libraries(appMySongPlayer PRIVATE
 )
 
 
+include(GNUInstallDirs)
+
+
+if(WIN32)
+    set(INSTALL_DESTDIR ".")
+elseif(APPLE)
+    set(INSTALL_DESTDIR ".")
+else()
+    set(INSTALL_DESTDIR ".")
+endif()
+
+
 install(TARGETS appMySongPlayer
-    BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    BUNDLE DESTINATION ${INSTALL_DESTDIR}
+    RUNTIME DESTINATION ${INSTALL_DESTDIR}/${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${INSTALL_DESTDIR}/${CMAKE_INSTALL_LIBDIR}
 )
+
+
+if(WIN32)
+  set_property(TARGET ${APP_NAME} APPEND PROPERTY 
+               VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:${APP_NAME}>)
+endif()
+
+
+if(APPLE)
+    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/app_icon.png"
+            DESTINATION "${CMAKE_INSTALL_PREFIX}/Resources"
+            RENAME "app_icon.icns")
+endif()
