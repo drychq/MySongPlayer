@@ -82,9 +82,12 @@ CMakeLists.txt.user*
 .rcc/
 .uic/
 /build*/
+/tools
+/dist
 
 # Resources
 assets/images/*
 assets/videos/*
 assets/audio/*
 out/*
+*.AppImage
