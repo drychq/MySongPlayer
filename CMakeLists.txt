@@ -9,8 +9,6 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(APP_NAME ${PROJECT_NAME})
-
 find_package(Qt6 REQUIRED COMPONENTS Quick Multimedia Sql)
 
 qt_standard_project_setup(REQUIRES 6.8)
@@ -115,18 +113,15 @@ set_target_properties(appMySongPlayer PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER com.example.myawesomeapp
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
-    MACOSX_BUNDLE_ICON_FILE "app_icon.icns"
     WIN32_EXECUTABLE TRUE
-    RESOURCE assets/icons/app_icon.ico
 )
 
 target_link_libraries(appMySongPlayer PRIVATE
     Qt6::Quick
     Qt6::Multimedia
     Qt6::Sql
-    TAGLIB::taglib
+    TagLib::TagLib
 )
-
 
 include(GNUInstallDirs)
 

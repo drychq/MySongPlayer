@@ -7,7 +7,6 @@ Rectangle {
     
     color: AppStyles.backgroundColor
 
-
     HoverHandler {
         onHoveredChanged: {
             if (PlayerController.lyricsModel.hasLyrics) {

@@ -9,13 +9,20 @@ Popup {
     
     signal localImportRequested()
     signal networkImportRequested()
-
+    
     width: 280
     height: 200
     modal: true
     focus: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-
+    
+    // Background event catcher, prevents click through to MainArea
+    TapHandler {
+        gesturePolicy: TapHandler.ReleaseWithinBounds
+        // Empty onTapped handler, only used to catch events
+        onTapped: {}
+    }
+    
     anchors.centerIn: Overlay.overlay
     
     background: Rectangle {
@@ -31,7 +38,7 @@ Popup {
         anchors.margins: AppStyles.largeSpacing
         spacing: AppStyles.mediumSpacing
         
-
+        
         Text {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Add Song")
@@ -54,7 +61,7 @@ Popup {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 50
-                color: localImportMouseArea.containsMouse ? Qt.lighter(AppStyles.primaryColor, 1.2) : AppStyles.primaryColor
+                color: localImportTapHandler.containsMouse ? Qt.lighter(AppStyles.primaryColor, 1.2) : AppStyles.primaryColor
                 radius: 6
                 
                 Behavior on color {
@@ -100,7 +107,7 @@ Popup {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 50
-                color: networkImportMouseArea.containsMouse ? Qt.lighter(AppStyles.surfaceColor, 1.3) : Qt.lighter(AppStyles.surfaceColor, 1.1)
+                color: networkImportTapHandler.containsMouse ? Qt.lighter(AppStyles.surfaceColor, 1.3) : Qt.lighter(AppStyles.surfaceColor, 1.1)
                 radius: 6
                 border.color: AppStyles.primaryColor
                 border.width: 1
