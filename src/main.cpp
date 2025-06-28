@@ -3,10 +3,10 @@
 #include <QQmlApplicationEngine>
 
 int main(int argc, char *argv[])
-{
+{    
     QGuiApplication app(argc, argv);
 
-    app.setWindowIcon(QIcon(":/MySongPlayer/assets/icons/app_icon.ico"));
+    app.setWindowIcon(QIcon("MySongPlayer/assets/icons/app_icon.ico"));
 
     QQmlApplicationEngine engine;
 

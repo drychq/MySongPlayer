@@ -84,6 +84,8 @@ export PATH="/opt/homebrew/opt/qt@6/bin:$PATH"
 
 ### 构建和运行
 
+#### 标准构建流程
+
 ```bash
 # 克隆项目
 git clone https://github.com/your-username/SongPlayer1.git
@@ -138,24 +140,6 @@ SongPlayer1/
 - **[类图](uml/class/)**: 详细的类关系图
 - **[时序图](uml/sequence/)**: 关键流程的时序图
 - **[用例图](uml/use-case/)**: 用户交互用例
-
-## 自动构建与发行（CI/CD）
-
-本项目已集成GitHub Actions自动化构建与发行，支持Linux（AppImage）、macOS（DMG）、Windows（EXE）三平台。
-
-- 触发条件：推送tag（如v1.0.0）或手动触发
-- 构建产物自动上传至GitHub Releases
-- 产物包含全部运行所需资源
-- Windows仅发布exe，无需zip
-
-### 获取方式
-
-1. 前往 [Releases 页面](https://github.com/你的仓库名/MySongPlayer/releases) 下载对应平台产物。
-2. Linux用户下载AppImage，macOS用户下载DMG，Windows用户下载EXE。
-
-### 本地构建
-
-如需本地构建，可参考`scripts/`目录下的各平台脚本。
 
 
 

@@ -10,7 +10,7 @@ class AudioPlayer : public QObject
 
     Q_PROPERTY(bool playing READ playing NOTIFY playingChanged)
     Q_PROPERTY(qint64 duration READ duration NOTIFY durationChanged)
-    Q_PROPERTY(qint64 poistion READ position NOTIFY positionChanged)
+    Q_PROPERTY(qint64 position READ position NOTIFY positionChanged)
     Q_PROPERTY(float volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool muted READ isMuted WRITE setMuted NOTIFY mutedChanged)
 

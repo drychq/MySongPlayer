@@ -5,6 +5,7 @@ project(MySongPlayer VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -12,17 +13,9 @@ set(APP_NAME ${PROJECT_NAME})
 
 find_package(Qt6 REQUIRED COMPONENTS Quick Multimedia Sql)
 
-# qt_standard_project_setup(REQUIRES 6.8)
-# In release use 6.7
-qt_standard_project_setup(REQUIRES 6.7)
+qt_standard_project_setup(REQUIRES 6.8)
 
-find_package(PkgConfig REQUIRED)
-
-pkg_check_modules(TAGLIB REQUIRED taglib)
-
-add_library(TAGLIB::taglib INTERFACE IMPORTED)
-target_include_directories(TAGLIB::taglib INTERFACE ${TAGLIB_INCLUDE_DIRS})
-target_link_libraries(TAGLIB::taglib INTERFACE ${TAGLIB_LIBRARIES})
+find_package(TagLib REQUIRED)
 
 qt_add_executable(appMySongPlayer
     src/main.cpp
@@ -101,13 +94,10 @@ target_sources(appMySongPlayer PRIVATE
     src/models/AudioSearchModel.cpp src/models/AudioSearchModel.h
     src/models/PlaylistModel.h src/models/PlaylistModel.cpp
     src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
-    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
     src/models/LyricsModel.h src/models/LyricsModel.cpp
-    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
 
     src/services/AudioImporter.h src/services/AudioImporter.cpp
     src/services/PlaylistStorageService.h src/services/PlaylistStorageService.cpp
-    src/services/LyricsService.h src/services/LyricsService.cpp
     src/services/LyricsService.h src/services/LyricsService.cpp
 
     src/interfaces/ICurrentSongManager.h

@@ -1,21 +1,22 @@
 module MySongPlayer
-singleton AppStyles 1.0 styles/AppStyles.qml
-singleton TimeUtils 1.0 utils/TimeUtils.js
+singleton AppStyles  styles/AppStyles.qml
+singleton TimeUtils  utils/TimeUtils.js
 
-AudioListItem 1.0 components/base/AudioListItem.qml
-CustomSlider 1.0 components/base/CustomSlider.qml
+AudioListItem  components/base/AudioListItem.qml
+CustomSlider  components/base/CustomSlider.qml
 
-AddSongOptionsPopup 1.0 components/complex/AddSongOptionsPopup.qml
-AudioProgressBar 1.0 components/complex/AudioProgressBar.qml
-AudioInfoBox 1.0 components/complex/AudioInfoBox.qml
-ImageButton 1.0 components/complex/ImageButton.qml
-LyricsDisplay 1.0 components/complex/LyricsDisplay.qml
-PlayModeButton 1.0 components/complex/PlayModeButton.qml
-SearchField 1.0 components/complex/SearchField.qml
-VolumeSlider 1.0 components/complex/VolumeSlider.qml
+AddSongOptionsPopup  components/complex/AddSongOptionsPopup.qml
+AudioProgressBar  components/complex/AudioProgressBar.qml
+AudioInfoBox  components/complex/AudioInfoBox.qml
+ImageButton  components/complex/ImageButton.qml
+LyricsDisplay  components/complex/LyricsDisplay.qml
+PlayModeButton  components/complex/PlayModeButton.qml
+SearchField  components/complex/SearchField.qml
+VolumeSlider  components/complex/VolumeSlider.qml
 
-LyricsDisplay 1.0 components/complex/LyricsDisplay.qml
-AddSongOptionsPopup 1.0 components/complex/AddSongOptionsPopup.qml
+TopBar  layouts/TopBar.qml
+MainArea  layouts/MainArea.qml
+BottomBar  layouts/BottomBar.qml
 
-SearchPanel 1.0 panles/SearchPanel.qml
-PlayListPanel 1.0 panles/PlayListPanel.qml
+SearchPanel  panels/SearchPanel.qml
+PlayListPanel  panels/PlayListPanel.qml
