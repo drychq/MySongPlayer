@@ -87,13 +87,9 @@ Popup {
                     }
                 }
                 
-                MouseArea {
-                    id: localImportMouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: {
-                        root.localImportRequested()
-                    }
+                TapHandler {
+                    id: localImportTapHandler
+                    onTapped: root.localImportRequested()
                 }
             }
             
@@ -136,11 +132,8 @@ Popup {
                 }
                 
                 TapHandler {
-                    id: networkImportMouseArea
-
-                    onTapped: {
-                        root.networkImportRequested()
-                    }
+                    id: networkImportTapHandler
+                    onTapped: root.networkImportRequested()
                 }
             }
         }
