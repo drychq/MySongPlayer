@@ -9,8 +9,6 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(APP_NAME ${PROJECT_NAME})
-
 find_package(Qt6 REQUIRED COMPONENTS Quick Multimedia Sql)
 
 qt_standard_project_setup(REQUIRES 6.8)
