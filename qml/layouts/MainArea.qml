@@ -5,6 +5,8 @@ import MySongPlayer
 Rectangle {
     id: root
     
+    signal areaClicked()
+    
     color: AppStyles.backgroundColor
 
     HoverHandler {
@@ -17,7 +19,7 @@ Rectangle {
 
     TapHandler {
         onTapped: {
-            PlayerController.lyricsModel.toggleDisplayMode()
+            root.areaClicked()
         }
     }
 
