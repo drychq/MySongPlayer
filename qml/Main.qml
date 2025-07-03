@@ -116,7 +116,6 @@ ApplicationWindow {
             topBar.useNetworkSearch = true
             searchPanel.searchMode = "network"
             searchPanel.hidden = false
-            topBar.searchPanelHidden = false
             playListPanel.hidden = true
         }
     }

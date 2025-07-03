@@ -7,9 +7,11 @@
 PlaylistCoordinator::PlaylistCoordinator(PlaylistModel *playlistModel, QObject *parent)
     : QObject(parent)
     , m_playlistModel(playlistModel)
-    , m_storageService(nullptr)
+    , m_storageService(nullptr) // This constructor is for scenarios where playlist persistence is not required.
     , m_currentPlaylistName("Default Playlist")
 {
+    // Connect signals from the playlist model to handle changes in the current song or playlist structure.
+    // These connections are fundamental for updating the UI and managing playback flow.
     connect(m_playlistModel, &PlaylistModel::currentSongChanged,
             this, &PlaylistCoordinator::onCurrentSongChanged);
     connect(m_playlistModel, &PlaylistModel::rowsInserted,
@@ -22,18 +24,24 @@ PlaylistCoordinator::PlaylistCoordinator(PlaylistModel *playlistModel, PlaylistS
     , m_storageService(storageService)
     , m_currentPlaylistName("Default Playlist")
 {
+    // Connect signals from the playlist model to handle changes in the current song or playlist structure.
+    // These connections are fundamental for updating the UI and managing playback flow.
     connect(m_playlistModel, &PlaylistModel::currentSongChanged,
             this, &PlaylistCoordinator::onCurrentSongChanged);
     connect(m_playlistModel, &PlaylistModel::rowsInserted,
             this, &PlaylistCoordinator::onRowsInserted);
 
     if (m_storageService) {
+        // Connect signals from the storage service to react to playlist save, delete, and rename events.
+        // This ensures that the coordinator's internal state and UI are synchronized with persistent storage changes.
         connect(m_storageService, &PlaylistStorageService::playlistSaved,
                 this, &PlaylistCoordinator::playlistSaved);
         connect(m_storageService, &PlaylistStorageService::playlistDeleted,
                 this, &PlaylistCoordinator::playlistDeleted);
         connect(m_storageService, &PlaylistStorageService::playlistRenamed,
                 this, [this](const QString &oldName, const QString &newName) {
+                    // Update the current playlist name if the renamed playlist was the active one.
+                    // This maintains consistency between the UI and the underlying data.
                     if (m_currentPlaylistName == oldName) {
                         m_currentPlaylistName = newName;
                         emit currentPlaylistChanged(newName);
@@ -54,7 +62,10 @@ void PlaylistCoordinator::setCurrentSong(AudioInfo *newCurrentSong)
 }
 void PlaylistCoordinator::switchToNextSong()
 {
+    // Manages the transition to the next song in the playlist based on the current playback mode.
+    // This centralizes the logic for sequential, looping, and shuffled playback.
     if (!m_playlistModel || m_playlistModel->rowCount() == 0) {
+        // If the playlist is empty, there's no song to switch to.
         return;
     }
 
@@ -64,6 +75,8 @@ void PlaylistCoordinator::switchToNextSong()
     switch (playMode) {
     case PlayMode::RepeatOne:
     case PlayMode::Loop: {
+        // For RepeatOne and Loop modes, if no song is currently playing, start from the first song.
+        // This ensures playback begins predictably when the playlist is initiated or reset.
         if (!currentSong) {
             AudioInfo* firstSong = m_playlistModel->getAudioInfoAtIndex(0);
             m_playlistModel->setCurrentSong(firstSong);
@@ -73,7 +86,8 @@ void PlaylistCoordinator::switchToNextSong()
             return;
         }
 
-        // Find current song index and switch to next
+        // Find the index of the current song to determine the next song in sequence.
+        // This linear search is acceptable given typical playlist sizes.
         int currentIndex = -1;
         for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
             if (m_playlistModel->getAudioInfoAtIndex(i) == currentSong) {
@@ -82,6 +96,8 @@ void PlaylistCoordinator::switchToNextSong()
             }
         }
 
+        // Calculate the index of the next song, wrapping around to the beginning of the playlist
+        // if the current song is the last one. This implements the looping behavior.
         int nextIndex = (currentIndex + 1) % m_playlistModel->rowCount();
         AudioInfo* nextSong = m_playlistModel->getAudioInfoAtIndex(nextIndex);
         m_playlistModel->setCurrentSong(nextSong);
@@ -92,7 +108,8 @@ void PlaylistCoordinator::switchToNextSong()
     }
 
     case PlayMode::Shuffle: {
-        // Simplified shuffle: randomly select a song
+        // For Shuffle mode, a random song is selected from the entire playlist.
+        // This provides a non-sequential playback experience.
         int randomIndex = QRandomGenerator::global()->bounded(m_playlistModel->rowCount());
         AudioInfo* randomSong = m_playlistModel->getAudioInfoAtIndex(randomIndex);
         m_playlistModel->setCurrentSong(randomSong);
@@ -107,7 +124,10 @@ void PlaylistCoordinator::switchToNextSong()
 
 void PlaylistCoordinator::switchToPreviousSong()
 {
+    // Manages the transition to the previous song in the playlist based on the current playback mode.
+    // This centralizes the logic for sequential, looping, and shuffled playback in reverse.
     if (!m_playlistModel || m_playlistModel->rowCount() == 0) {
+        // If the playlist is empty, there's no song to switch to.
         return;
     }
 
@@ -117,6 +137,8 @@ void PlaylistCoordinator::switchToPreviousSong()
     switch (playMode) {
     case PlayMode::RepeatOne:
     case PlayMode::Loop: {
+        // For RepeatOne and Loop modes, if no song is currently playing, start from the last song.
+        // This ensures playback begins predictably when navigating backward from an empty state.
         if (!currentSong) {
             AudioInfo* lastSong = m_playlistModel->getAudioInfoAtIndex(m_playlistModel->rowCount() - 1);
             m_playlistModel->setCurrentSong(lastSong);
@@ -126,6 +148,8 @@ void PlaylistCoordinator::switchToPreviousSong()
             return;
         }
 
+        // Find the index of the current song to determine the previous song in sequence.
+        // This linear search is acceptable given typical playlist sizes.
         int currentIndex = -1;
         for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
             if (m_playlistModel->getAudioInfoAtIndex(i) == currentSong) {
@@ -134,6 +158,8 @@ void PlaylistCoordinator::switchToPreviousSong()
             }
         }
 
+        // Calculate the index of the previous song, wrapping around to the end of the playlist
+        // if the current song is the first one. This implements the looping behavior.
         int prevIndex = (currentIndex - 1 + m_playlistModel->rowCount()) % m_playlistModel->rowCount();
         AudioInfo* prevSong = m_playlistModel->getAudioInfoAtIndex(prevIndex);
         m_playlistModel->setCurrentSong(prevSong);
@@ -144,6 +170,8 @@ void PlaylistCoordinator::switchToPreviousSong()
     }
 
     case PlayMode::Shuffle: {
+        // For Shuffle mode, a random song is selected from the entire playlist.
+        // This provides a non-sequential playback experience when navigating backward.
         int randomIndex = QRandomGenerator::global()->bounded(m_playlistModel->rowCount());
         AudioInfo* randomSong = m_playlistModel->getAudioInfoAtIndex(randomIndex);
         m_playlistModel->setCurrentSong(randomSong);
@@ -205,14 +233,19 @@ QList<QObject*> PlaylistCoordinator::getPlaylistAudioInfoList() const
 
 bool PlaylistCoordinator::saveCurrentPlaylist(const QString &playlistName)
 {
+    // Ensures that a storage service is available before attempting to save the playlist.
+    // This prevents crashes and provides clear feedback if persistence is not configured.
     if (!m_storageService) {
         qWarning() << "Storage service not initialized, cannot save playlist";
         return false;
     }
 
+    // Determine the target playlist name. If an explicit name is provided, use it;
+    // otherwise, default to the currently active playlist name.
     QString targetPlaylistName = playlistName.isEmpty() ? m_currentPlaylistName : playlistName;
 
-    // Get current playlist data
+    // Collect all AudioInfo objects from the current playlist model.
+    // This prepares the data for serialization and storage.
     QList<AudioInfo*> audioItems;
     for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
         AudioInfo* audioInfo = m_playlistModel->getAudioInfoAtIndex(i);
@@ -221,7 +254,8 @@ bool PlaylistCoordinator::saveCurrentPlaylist(const QString &playlistName)
         }
     }
 
-    // Get current play mode and index
+    // Determine the current playback mode and the index of the currently playing song.
+    // This metadata is saved along with the playlist to restore the exact playback state.
     PlayMode playMode = m_playlistModel->playMode();
     int currentIndex = -1;
     if (m_playlistModel->currentSong()) {
@@ -233,9 +267,12 @@ bool PlaylistCoordinator::saveCurrentPlaylist(const QString &playlistName)
         }
     }
 
+    // Delegate the actual saving operation to the PlaylistStorageService.
+    // This decouples the playlist management logic from the persistence mechanism.
     bool success = m_storageService->savePlaylist(targetPlaylistName, audioItems, playMode, currentIndex);
     if (success && playlistName.isEmpty()) {
-        // Update current playlist name if saved with default name successfully
+        // If the playlist was saved successfully using the default name, update the internal
+        // current playlist name to reflect this, ensuring consistency.
         m_currentPlaylistName = targetPlaylistName;
     }
 
@@ -244,21 +281,27 @@ bool PlaylistCoordinator::saveCurrentPlaylist(const QString &playlistName)
 
 bool PlaylistCoordinator::loadPlaylist(const QString &playlistName)
 {
+    // Ensures that a storage service is available before attempting to load a playlist.
+    // This prevents crashes and provides clear feedback if persistence is not configured.
     if (!m_storageService) {
         qWarning() << "Storage service not initialized, cannot load playlist";
         return false;
     }
 
+    // Attempt to load the playlist data from the storage service.
+    // If the playlist does not exist or is empty, log a warning and return false.
     PlaylistInfo playlistInfo = m_storageService->loadPlaylist(playlistName);
     if (playlistInfo.id == -1 || playlistInfo.audioItems.isEmpty()) {
         qWarning() << "Playlist does not exist or is empty:" << playlistName;
         return false;
     }
 
-    // Clear current playlist
+    // Clear the current playlist model before loading new items.
+    // This ensures that the UI reflects the newly loaded playlist accurately.
     m_playlistModel->clearPlaylist();
 
-    // Add audio items
+    // Add each audio item from the loaded playlist data to the playlist model.
+    // This populates the UI with the songs from the loaded playlist.
     for (AudioInfo* audioInfo : std::as_const(playlistInfo.audioItems)) {
         if (audioInfo) {
             m_playlistModel->addAudio(audioInfo->title(), audioInfo->authorName(),
@@ -267,10 +310,11 @@ bool PlaylistCoordinator::loadPlaylist(const QString &playlistName)
         }
     }
 
-    // Restore play mode
+    // Restore the saved play mode to ensure consistent playback behavior.
     m_playlistModel->setPlayMode(playlistInfo.playMode);
 
-    // Restore current song
+    // Restore the currently playing song and its audio source.
+    // This allows the application to resume playback from where it left off in the loaded playlist.
     if (playlistInfo.currentIndex >= 0 && playlistInfo.currentIndex < m_playlistModel->rowCount()) {
         AudioInfo* currentSong = m_playlistModel->getAudioInfoAtIndex(playlistInfo.currentIndex);
         m_playlistModel->setCurrentSong(currentSong);
@@ -281,7 +325,7 @@ bool PlaylistCoordinator::loadPlaylist(const QString &playlistName)
         }
     }
 
-    // Update current playlist name
+    // Update the internal current playlist name and emit signals to notify other components.
     m_currentPlaylistName = playlistName;
 
     emit currentPlaylistChanged(playlistName);
@@ -301,6 +345,8 @@ QStringList PlaylistCoordinator::getAllPlaylistNames() const
 
 bool PlaylistCoordinator::deletePlaylist(const QString &playlistName)
 {
+    // Ensures that a storage service is available before attempting to delete a playlist.
+    // This prevents crashes and provides clear feedback if persistence is not configured.
     if (!m_storageService) {
         qWarning() << "Storage service not initialized, cannot delete playlist";
         return false;
@@ -308,7 +354,8 @@ bool PlaylistCoordinator::deletePlaylist(const QString &playlistName)
 
     bool success = m_storageService->deletePlaylist(playlistName);
     if (success) {
-        // Switch to default playlist if deleting current playlist
+        // If the currently active playlist is deleted, switch back to the default playlist.
+        // This prevents the application from being in an inconsistent state with a non-existent active playlist.
         if (m_currentPlaylistName == playlistName) {
             m_currentPlaylistName = "Default Playlist";
             emit currentPlaylistChanged(m_currentPlaylistName);
@@ -350,6 +397,8 @@ void PlaylistCoordinator::onRequestAudioSourceChange(const QUrl &source)
 
 void PlaylistCoordinator::onPlayFinished()
 {
+    // This method is invoked when the currently playing audio track finishes.
+    // It determines the next action based on the active playback mode (RepeatOne, Loop, Shuffle).
     if (!m_playlistModel) {
         return;
     }
@@ -357,6 +406,8 @@ void PlaylistCoordinator::onPlayFinished()
     PlayMode playMode = m_playlistModel->playMode();
     switch (playMode) {
     case PlayMode::RepeatOne:
+        // If in 'Repeat One' mode, the current song is re-requested to play again.
+        // This ensures continuous playback of the same track.
         if (m_playlistModel->currentSong()) {
             emit requestAudioSourceChange(m_playlistModel->currentSong()->audioSource());
         }
@@ -364,6 +415,9 @@ void PlaylistCoordinator::onPlayFinished()
 
     case PlayMode::Loop:
     case PlayMode::Shuffle:
+        // For 'Loop' and 'Shuffle' modes, the system attempts to switch to the next song.
+        // In 'Loop' mode, this will be the next sequential song (wrapping around if at the end).
+        // In 'Shuffle' mode, this will be a randomly selected song.
         switchToNextSong();
         break;
     }

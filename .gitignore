@@ -84,6 +84,16 @@ CMakeLists.txt.user*
 /build*/
 /out
 
+# JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+*.iws
+.idea_modules/
+atlassian-ide-plugin.xml
+.cursor/
+
 # Resources
 assets/images/*
 assets/videos/*

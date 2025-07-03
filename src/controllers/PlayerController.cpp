@@ -20,6 +20,11 @@ PlayerController::PlayerController(QObject *parent)
     }
 
     auto* playlistCoordinator = new PlaylistCoordinator(m_playlistModel, m_playlistStorageService, this);
+    /* To centralize playlist management logic and decouple it from the PlayerController,
+     * the PlaylistCoordinator implements various interfaces (ICurrentSongManager, IPlaylistOperations, IPlaylistPersistence).
+     * This design promotes modularity and testability by allowing the PlayerController to interact
+     * with playlist functionalities through well-defined interfaces rather than direct concrete classes.
+     */
     m_currentSongManager = qobject_cast<ICurrentSongManager*>(playlistCoordinator);
     m_playlistOperations = qobject_cast<IPlaylistOperations*>(playlistCoordinator);
     m_playlistPersistence = qobject_cast<IPlaylistPersistence*>(playlistCoordinator);
@@ -246,27 +251,36 @@ void PlayerController::onAudioImported(const QString &title, const QString &auth
 
 void PlayerController::onCurrentSongChanged()
 {
+    // Manages the state of the audio player and lyrics display based on the currently selected song.
+    // If no song is selected, playback is stopped and lyrics are cleared to ensure a clean state.
     if (m_currentSongManager->currentSong() == nullptr) {
         m_audioPlayer->stop();
-    } else {
-        AudioInfo* currentSong = m_currentSongManager->currentSong();
-        QString audioFilePath = currentSong->audioSource().toLocalFile();
+        m_lyricsModel->clearLyrics(); // Clear lyrics when no song is playing
+        return;
+    }
 
+    // If a song is selected, attempt to load and display its lyrics.
+    // Lyrics are parsed from the audio file's local path, if available.
+    AudioInfo* currentSong = m_currentSongManager->currentSong();
+    if (currentSong) {
+        QString audioFilePath = currentSong->audioSource().toLocalFile();
         if (!audioFilePath.isEmpty()) {
             QList<LyricsService::LyricLine> lyrics = m_lyricsService->parseLrcFile(audioFilePath);
             m_lyricsModel->setLyrics(lyrics);
-
-            qDebug() << "PlayerController: Song switched, loading lyrics:" << currentSong->title()
-                     << "lyrics lines:" << lyrics.size()
-                     << "showLyrics initial state:" << m_lyricsModel->showLyrics();
+        } else {
+            // Clear lyrics if the audio source is not a local file (e.g., network stream) or path is empty.
+            m_lyricsModel->clearLyrics();
         }
+    } else {
+        // Fallback to clear lyrics if currentSong somehow becomes null after initial check.
+        m_lyricsModel->clearLyrics();
     }
 }
 
 void PlayerController::onPositionChanged()
 {
     qint64 currentPosition = m_audioPlayer->position();
-    m_lyricsModel->updateCurrentPosition(currentPosition);
+    m_lyricsModel->updatePosition(currentPosition);
 }
 
 LyricsModel* PlayerController::lyricsModel() const
@@ -278,9 +292,13 @@ void PlayerController::onPlaylistChanged()
 {
     static QTimer* saveTimer = nullptr;
     if (!saveTimer) {
+        // Initialize a single-shot timer for auto-saving the playlist.
+        // This approach debounces playlist changes, preventing excessive write operations
+        // to storage during rapid modifications (e.g., adding multiple songs).
+        // The timer ensures that the playlist is saved only after a short period of inactivity.
         saveTimer = new QTimer(this);
         saveTimer->setSingleShot(true);
-        saveTimer->setInterval(2000);
+        saveTimer->setInterval(2000); // Auto-save after 2 seconds of no further changes.
         connect(saveTimer, &QTimer::timeout, this, [this]() {
             bool success = m_playlistPersistence->saveCurrentPlaylist("Default Playlist");
             if (success) {
@@ -291,11 +309,17 @@ void PlayerController::onPlaylistChanged()
         });
     }
 
+    // Restart the timer on every playlist change. If changes occur rapidly, the timer is reset,
+    // effectively delaying the save operation until a pause in activity.
     saveTimer->start();
 }
 
 void PlayerController::loadDefaultPlaylistOnStartup()
 {
+    // Defer loading the default playlist to allow the application's UI and other components
+    // to fully initialize first. This prevents potential blocking or race conditions
+    // that might occur if playlist loading (which involves file I/O) happens too early
+    // in the application startup sequence.
     QTimer::singleShot(100, this, [this]() {
         bool success = m_playlistPersistence->loadPlaylist("Default Playlist");
         if (success) {
