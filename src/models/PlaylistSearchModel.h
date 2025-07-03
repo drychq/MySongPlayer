@@ -8,9 +8,6 @@
 
 #include "models/AudioInfo.h"
 
-class AudioInfo;
-
-
 class PlaylistSearchModel : public QAbstractListModel
 {
     Q_OBJECT

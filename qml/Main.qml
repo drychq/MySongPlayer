@@ -72,6 +72,14 @@ ApplicationWindow {
             id: mainArea
             Layout.fillWidth: true
             Layout.fillHeight: true
+            
+            onAreaClicked: {
+                if (!playListPanel.hidden) {
+                    playListPanel.hidden = true
+                } else {
+                    PlayerController.lyricsModel.toggleDisplayMode()
+                }
+            }
         }
 
         BottomBar {
@@ -108,7 +116,6 @@ ApplicationWindow {
             topBar.useNetworkSearch = true
             searchPanel.searchMode = "network"
             searchPanel.hidden = false
-            topBar.searchPanelHidden = false
             playListPanel.hidden = true
         }
     }

@@ -1,3 +1,4 @@
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-07-04
 #include "services/PlaylistStorageService.h"
 #include "storage/PlaylistDatabase.h"
 #include "models/AudioInfo.h"
@@ -30,11 +31,10 @@ namespace {
 
 PlaylistStorageService::PlaylistStorageService(QObject *parent)
     : QObject(parent)
-    , m_database(nullptr)
+    , m_database(std::make_unique<PlaylistDatabase>(this))
     , m_initialized(false)
 {
-    m_database = new PlaylistDatabase(this);
-    connect(m_database, &PlaylistDatabase::databaseError,
+    connect(m_database.get(), &PlaylistDatabase::databaseError,
             this, &PlaylistStorageService::onDatabaseError);
 }
 
@@ -381,7 +381,7 @@ QList<AudioInfo*> PlaylistStorageService::loadAudioItemsForPlaylist(int playlist
         );
 
     while (query.next()) {
-        std::unique_ptr<AudioInfo> audioInfo(new AudioInfo(this));
+        std::unique_ptr<AudioInfo> audioInfo = std::make_unique<AudioInfo>(this);
         audioInfo->setTitle(query.value("title").toString());
         audioInfo->setAuthorName(query.value("author_name").toString());
         audioInfo->setAudioSource(QUrl(query.value("audio_source").toString()));

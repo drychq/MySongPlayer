@@ -89,7 +89,7 @@ export PATH="/opt/homebrew/opt/qt@6/bin:$PATH"
 ```bash
 # 克隆项目
 git clone https://github.com/your-username/SongPlayer1.git
-cd SongPlayer1
+cd MySongPlayer
 
 # 创建构建目录
 mkdir build && cd build
@@ -101,13 +101,13 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . --parallel
 
 # 运行应用程序
-./appSongPlayer
+./appMySongPlayer
 ```
 
 ##  项目结构
 
 ```
-SongPlayer1/
+MySongPlayer/
 ├── assets/                    # 资源文件
 │   └── icons/                # 应用图标
 ├── qml/                      # QML 用户界面
@@ -130,6 +130,7 @@ SongPlayer1/
 │   ├── class/               # 类图
 │   ├── sequence/            # 时序图
 │   └── use-case/            # 用例图
+├── doc/                     # 开发文档                      
 └── CMakeLists.txt           # CMake 构建文件
 ```
 

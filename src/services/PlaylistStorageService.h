@@ -1,4 +1,4 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-23
+// Written by HanQin Chen (cqnuchq@outlook.com) 2025-07-04
 #pragma once
 
 #include <QObject>
@@ -100,7 +100,7 @@ private:
     static constexpr const char* ERROR_NAME_TOO_LONG = "Playlist name is too long";
     static constexpr const char* ERROR_INVALID_CHARS = "Playlist name contains invalid characters";
 
-    PlaylistDatabase *m_database;
+    std::unique_ptr<PlaylistDatabase> m_database;
     QString m_lastError;
     bool m_initialized;
 

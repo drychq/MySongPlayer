@@ -1,11 +1,12 @@
 #include "LyricsModel.h"
+#include "models/AudioInfo.h"
+#include "controllers/PlayerController.h"
 
 LyricsModel::LyricsModel(QObject *parent)
     : QObject(parent)
     , m_currentLineIndex(-1)
     , m_hasLyrics(false)
     , m_showLyrics(false)
-    , m_lyricsDelayMs(0) // Usually 800 - 1000
 {
 }
 
@@ -42,7 +43,7 @@ void LyricsModel::setLyrics(const QList<LyricsService::LyricLine>& lyrics)
     // Lyrics data updated - no debug output in production
 }
 
-void LyricsModel::updateCurrentPosition(qint64 position)
+void LyricsModel::updatePosition(qint64 position)
 {
     if (m_lyrics.isEmpty()) {
         return;
@@ -116,11 +117,6 @@ int LyricsModel::findLyricIndexByPosition(qint64 position)
         return -1;
     }
 
-    qint64 adjustedPosition = position - m_lyricsDelayMs;
-    if (adjustedPosition < 0) {
-        adjustedPosition = 0;
-    }
-
     int left = 0;
     int right = m_lyrics.size() - 1;
     int result = -1;
@@ -128,7 +124,7 @@ int LyricsModel::findLyricIndexByPosition(qint64 position)
     while (left <= right) {
         int mid = left + (right - left) / 2;
 
-        if (m_lyrics[mid].timestamp <= adjustedPosition) {
+        if (m_lyrics[mid].timestamp <= position) {
             result = mid;
             left = mid + 1;
         } else {
@@ -139,12 +135,4 @@ int LyricsModel::findLyricIndexByPosition(qint64 position)
     return result;
 }
 
-void LyricsModel::setLyricsDelay(qint64 delayMs)
-{
-    m_lyricsDelayMs = delayMs;
-}
 
-qint64 LyricsModel::lyricsDelay() const
-{
-    return m_lyricsDelayMs;
-}
