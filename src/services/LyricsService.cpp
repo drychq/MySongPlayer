@@ -16,9 +16,10 @@ QList<LyricsService::LyricLine> LyricsService::parseLrcFile(const QString& audio
 {
     QList<LyricLine> lyrics;
 
-    // Attempt to locate the corresponding LRC file for the given audio track.
-    // This involves checking for an exact match first, then performing a fuzzy search
-    // if an exact match is not found, to increase the likelihood of finding lyrics.
+    /* Attempt to locate the corresponding LRC file for the given audio track.
+     *  This involves checking for an exact match first, then performing a fuzzy search
+     *  if an exact match is not found, to increase the likelihood of finding lyrics.
+     */
     QString lrcFilePath = findLrcFile(audioFilePath);
     if (lrcFilePath.isEmpty()) {
         return lyrics;
@@ -75,10 +76,10 @@ QList<LyricsService::LyricLine> LyricsService::parseLrcContent(const QString& co
 
     // Regular expression to capture time tags in the format [mm:ss.zzz] or [mm:ss.zz].
     // This allows for flexible parsing of different millisecond precisions in LRC files.
-    static const QRegularExpression timeTagRegex(R"([(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?])");
+    static const QRegularExpression timeTagRegex(R"(\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\])");
     // Regular expression to match a full LRC line, ensuring it starts with one or more time tags
     // followed by the actual lyric text. This helps in robustly separating timestamps from content.
-    static const QRegularExpression fullLineRegex(R"(^([(\d{1,2}:\d{2}(?:\.\d{1,3})?)])+(.*)$)");
+    static const QRegularExpression fullLineRegex(R"(^(\[(?:\d{1,2}:\d{2}(?:\.\d{1,3})?)\])+(.*)$)");
 
     QStringList lines = content.split('\n');
 
@@ -134,7 +135,6 @@ QList<LyricsService::LyricLine> LyricsService::parseLrcContent(const QString& co
 
 qint64 LyricsService::parseTimestamp(const QString& timeString)
 {
-    // 使用静态局部变量避免重复创建QRegularExpression对象
     static const QRegularExpression timeRegex(R"((\d{1,2}):(\d{2})(?:\.(\d{2}))?)");
     QRegularExpressionMatch match = timeRegex.match(timeString);
 
@@ -159,7 +159,7 @@ QString LyricsService::preprocessFileName(const QString& fileName)
     // Removes common special characters and punctuation from the file name.
     // This normalization helps in matching files where names might differ only by these characters,
     // improving the accuracy of fuzzy matching algorithms.
-    static const QRegularExpression specialChars(R"([\(\)\[\]\{\}\-_\s\.\,\;\:\!\?\'\"\`\~\@\#\$\%\^\&\*\+\=\|\\\/<>\])");
+    static const QRegularExpression specialChars(R"([\(\)\[\]\{\}\-_\s\.\,\;\:\!\?\'\"\`\~\@\#\$\%\^\&\*\+\=\|\\\/<>])");
     result = result.replace(specialChars, "");
 
     // Removes common tags or keywords that are often present in file names but are irrelevant

@@ -6,9 +6,6 @@
 #include <QtQml/qqmlregistration.h>
 #include "services/LyricsService.h"
 
-class AudioInfo;
-class PlayerController;
-
 class LyricsModel : public QObject
 {
     Q_OBJECT

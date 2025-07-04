@@ -135,7 +135,9 @@ void PlaylistCoordinator::switchToPreviousSong()
     AudioInfo* currentSong = m_playlistModel->currentSong();
 
     switch (playMode) {
+
     case PlayMode::RepeatOne:
+
     case PlayMode::Loop: {
         // For RepeatOne and Loop modes, if no song is currently playing, start from the last song.
         // This ensures playback begins predictably when navigating backward from an empty state.
@@ -405,6 +407,7 @@ void PlaylistCoordinator::onPlayFinished()
 
     PlayMode playMode = m_playlistModel->playMode();
     switch (playMode) {
+
     case PlayMode::RepeatOne:
         // If in 'Repeat One' mode, the current song is re-requested to play again.
         // This ensures continuous playback of the same track.
@@ -414,6 +417,7 @@ void PlaylistCoordinator::onPlayFinished()
         break;
 
     case PlayMode::Loop:
+
     case PlayMode::Shuffle:
         // For 'Loop' and 'Shuffle' modes, the system attempts to switch to the next song.
         // In 'Loop' mode, this will be the next sequential song (wrapping around if at the end).

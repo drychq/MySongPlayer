@@ -16,10 +16,13 @@
 namespace {
     // Default artist name to use when metadata is missing, ensuring a consistent display.
     constexpr const char* DEFAULT_ARTIST = "Unknown Artist";
+
     // Path to a fallback icon for album art when no embedded cover is found, providing a visual placeholder.
     constexpr const char* DEFAULT_ICON_PATH = "qrc:/qt/qml/MySongPlayer/assets/icons/app_icon.png";
+
     // Subdirectory within the cache location for storing extracted album covers, centralizing temporary image files.
     constexpr const char* COVERS_DIR = "/covers";
+
     // Suffix appended to extracted cover art filenames to distinguish them and prevent naming conflicts.
     constexpr const char* COVER_SUFFIX = "_cover.jpg";
 
@@ -27,6 +30,7 @@ namespace {
     constexpr const char* MIME_JPEG = "image/jpeg";
     constexpr const char* MIME_PNG = "image/png";
     constexpr const char* MIME_UNKNOWN = "image/unknown";
+
     // File extensions for common image formats, used for MIME type detection.
     constexpr const char* EXT_JPG = "jpg";
     constexpr const char* EXT_JPEG = "jpeg";
@@ -63,9 +67,10 @@ void AudioImporter::importLocalAudio(const QList<QUrl>& fileUrls)
 
 void AudioImporter::processAudioFile(const QFileInfo &fileInfo)
 {
-    // This method orchestrates the extraction of audio metadata (title, artist) and album art
-    // from a given audio file. It prioritizes embedded metadata but falls back to default values
-    // if information is missing, ensuring a complete data set for each imported track.
+    /*  This method orchestrates the extraction of audio metadata (title, artist) and album art
+     *  from a given audio file. It prioritizes embedded metadata but falls back to default values
+     *  if information is missing, ensuring a complete data set for each imported track.
+     */
     QString filePath = fileInfo.absoluteFilePath();
     QString title = fileInfo.baseName();
     QString authorName = DEFAULT_ARTIST;
