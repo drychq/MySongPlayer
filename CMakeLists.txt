@@ -15,11 +15,15 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 find_package(TagLib REQUIRED)
 
-qt_add_executable(appMySongPlayer
+file(GLOB_RECURSE APP_SOURCES "src/*.h" "src/*.cpp")
+
+set(APP_NAME appMySongPlayer)
+qt_add_executable(${APP_NAME}
     src/main.cpp
+    ${APP_SOURCES}
 )
 
-target_include_directories(appMySongPlayer PRIVATE
+target_include_directories(${APP_NAME} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/src/controllers
         ${CMAKE_CURRENT_SOURCE_DIR}/src/models
@@ -27,7 +31,7 @@ target_include_directories(appMySongPlayer PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/services
 )
 
-qt_add_qml_module(appMySongPlayer
+qt_add_qml_module(${APP_NAME}
     URI MySongPlayer
     VERSION 1.0
     QML_FILES
@@ -80,43 +84,21 @@ qt_add_qml_module(appMySongPlayer
         assets/icons/low_icon.png
         assets/icons/mute_icon.png
         assets/icons/medium_icon.png
-
-        README.md
 )
 
-target_sources(appMySongPlayer PRIVATE
-    src/controllers/PlayerController.cpp src/controllers/PlayerController.h
-    src/controllers/AudioPlayer.cpp src/controllers/AudioPlayer.h
+set(APP_ICON_MACOS "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/app_icon.icns")
+set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/app_icon.ico")
 
-    src/models/AudioInfo.cpp src/models/AudioInfo.h
-    src/models/AudioSearchModel.cpp src/models/AudioSearchModel.h
-    src/models/PlaylistModel.h src/models/PlaylistModel.cpp
-    src/models/PlaylistSearchModel.h src/models/PlaylistSearchModel.cpp
-    src/models/LyricsModel.h src/models/LyricsModel.cpp
-
-    src/services/AudioImporter.h src/services/AudioImporter.cpp
-    src/services/PlaylistStorageService.h src/services/PlaylistStorageService.cpp
-    src/services/LyricsService.h src/services/LyricsService.cpp
-
-    src/interfaces/ICurrentSongManager.h
-    src/interfaces/IPlaylistOperations.h
-    src/interfaces/IPlaylistPersistence.h
-
-    src/coordinators/PlaylistCoordinator.h src/coordinators/PlaylistCoordinator.cpp
-
-    src/storage/PlaylistDatabase.h src/storage/PlaylistDatabase.cpp
-)
-
-
-set_target_properties(appMySongPlayer PROPERTIES
+set_target_properties(${APP_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_GUI_IDENTIFIER com.example.myawesomeapp
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
-    WIN32_EXECUTABLE TRUE
+    MACOSX_BUNDLE_ICON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/app_icon.png"
+    RESOURCE "${APP_ICON_WINDOWS}"
 )
 
-target_link_libraries(appMySongPlayer PRIVATE
+target_link_libraries(${APP_NAME} PRIVATE
     Qt6::Quick
     Qt6::Multimedia
     Qt6::Sql
@@ -124,7 +106,6 @@ target_link_libraries(appMySongPlayer PRIVATE
 )
 
 include(GNUInstallDirs)
-
 
 if(WIN32)
     set(INSTALL_DESTDIR ".")
@@ -134,22 +115,13 @@ else()
     set(INSTALL_DESTDIR ".")
 endif()
 
-
-install(TARGETS appMySongPlayer
-    BUNDLE DESTINATION ${INSTALL_DESTDIR}
-    RUNTIME DESTINATION ${INSTALL_DESTDIR}/${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${INSTALL_DESTDIR}/${CMAKE_INSTALL_LIBDIR}
+install(TARGETS ${APP_NAME}
+    BUNDLE DESTINATION . COMPONENT Devel
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Devel
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Devel
 )
 
-
-if(WIN32)
-  set_property(TARGET ${APP_NAME} APPEND PROPERTY 
-               VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:${APP_NAME}>)
-endif()
-
-
-if(APPLE)
-    install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/app_icon.png"
-            DESTINATION "${CMAKE_INSTALL_PREFIX}/Resources"
-            RENAME "app_icon.icns")
+if(MSVC)
+  set_property(TARGET ${APP_NAME} PROPERTY
+               VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${APP_NAME}>")
 endif()

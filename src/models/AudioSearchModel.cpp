@@ -89,7 +89,7 @@ void AudioSearchModel::parseData()
         if (headers["status"].toString() == "success") {
             QJsonArray results = jsonDocument["results"].toArray();
 
-            for (const auto &result : results) {
+            for (const auto &result : std::as_const(results)) {
                 QJsonObject entry = result.toObject();
 
                 if (entry["audiodownload_allowed"].toBool()) {

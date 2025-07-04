@@ -1,5 +1,4 @@
 #include "LyricsModel.h"
-#include "models/AudioInfo.h"
 #include "controllers/PlayerController.h"
 
 LyricsModel::LyricsModel(QObject *parent)
