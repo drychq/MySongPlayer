@@ -94,9 +94,10 @@ void AudioImporter::processAudioFile(const QFileInfo &fileInfo)
             imageSource = coverUrl;
         }
     } else {
-        // If TagLib fails to read the file or its tags, proceed with default title/artist
-        // and the default icon path. This ensures that even unreadable files can be added
-        // to the playlist, albeit with limited metadata.
+        /* If TagLib fails to read the file or its tags, proceed with default title/artist
+         * and the default icon path. This ensures that even unreadable files can be added
+         * to the playlist, albeit with limited metadata.
+         */
     }
 
     QUrl audioSource = QUrl::fromLocalFile(filePath);

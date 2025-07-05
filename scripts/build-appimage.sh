@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#!/bin/bash
+
 # 脚本出错时立即退出
 set -e
 
@@ -13,50 +15,80 @@ readonly PROJECT_NAME="appMySongPlayer"
 readonly APP_NAME="MySongPlayer"
 
 # 3. 位于项目根目录的图标文件名
-readonly ICON_FILE="assets/icons/app_icon.png"
+readonly ICON_FILE_RELATIVE="assets/icons/app_icon.png"
+readonly ICON_ICO_FILE_RELATIVE="assets/icons/app_icon.ico"
 
 # 4. 存放QML源文件(.qml)的目录，相对于项目根目录
-readonly QML_SOURCES_DIR="qml"
-
-# 5. 应用程序版本号 (自动从git获取，或默认为1.0.0)
-readonly APP_VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "1.0.0")
+readonly QML_SOURCES_DIR_RELATIVE="qml"
 
 ################################################################################
 # 脚本核心逻辑 - 通常无需修改
 ################################################################################
 
+# 获取脚本所在目录的绝对路径
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+# 定义项目根目录 (假设脚本位于 project_root/scripts/)
+readonly PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
+
 echo "=== 开始构建和打包 AppImage ==="
 echo "项目名称: ${PROJECT_NAME}"
 echo "应用版本: ${APP_VERSION}"
+echo "项目根目录: ${PROJECT_ROOT}"
+
+# 定义工具和目录路径 (相对于项目根目录的绝对路径)
+readonly TOOLS_DIR="${PROJECT_ROOT}/tools"
+readonly LINUXDEPLOY_PATH="${TOOLS_DIR}/linuxdeploy-x86_64.AppImage"
+readonly QT_PLUGIN_PATH="${TOOLS_DIR}/linuxdeploy-plugin-qt-x86_64.AppImage"
+readonly APPIMAGETOOL_PATH="${TOOLS_DIR}/appimagetool-x86_64.AppImage"
+readonly BUILD_DIR="${PROJECT_ROOT}/build"
+readonly DIST_DIR="${PROJECT_ROOT}/dist"
+readonly APPDIR_PATH="${DIST_DIR}/${PROJECT_NAME}.AppDir"
+readonly ICON_FILE="${PROJECT_ROOT}/${ICON_FILE_RELATIVE}"
+readonly ICON_ICO_FILE="${PROJECT_ROOT}/${ICON_ICO_FILE_RELATIVE}"
+readonly QML_SOURCES_DIR="${PROJECT_ROOT}/${QML_SOURCES_DIR_RELATIVE}"
+
 
 # 检查QML目录是否存在
 if [ ! -d "$QML_SOURCES_DIR" ]; then
     echo "错误: QML源文件目录 '${QML_SOURCES_DIR}' 不存在！"
-    echo "请修改脚本中的 'QML_SOURCES_DIR' 变量为您存放QML文件的目录。"
+    echo "请修改脚本中的 'QML_SOURCES_DIR_RELATIVE' 变量为您存放QML文件的目录。"
     exit 1
 fi
-
-# 定义工具和目录路径
-readonly TOOLS_DIR="${PWD}/tools"
-readonly LINUXDEPLOY_PATH="${TOOLS_DIR}/linuxdeploy-x86_64.AppImage"
-readonly QT_PLUGIN_PATH="${TOOLS_DIR}/linuxdeploy-plugin-qt-x86_64.AppImage"
-readonly APPIMAGETOOL_PATH="${TOOLS_DIR}/appimagetool-x86_64.AppImage"
-readonly BUILD_DIR="${PWD}/build"
-readonly DIST_DIR="${PWD}/dist"
-readonly APPDIR_PATH="${DIST_DIR}/${PROJECT_NAME}.AppDir"
 
 # --- 1. 准备工具 ---
 echo ""
 echo "--- 步骤 1: 检查并准备打包工具 ---"
 mkdir -p "$TOOLS_DIR"
-(
-    cd "$TOOLS_DIR"
+
+
+# 下载 linuxdeploy
+if [ ! -f "$LINUXDEPLOY_PATH" ]; then
+    echo "下载 linuxdeploy..."
     wget -c -q "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" -O "$LINUXDEPLOY_PATH"
+else
+    echo "linuxdeploy 已存在，跳过下载。"
+fi
+
+# 下载 linuxdeploy-plugin-qt
+if [ ! -f "$QT_PLUGIN_PATH" ]; then
+    echo "下载 linuxdeploy-plugin-qt..."
     wget -c -q "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage" -O "$QT_PLUGIN_PATH"
+else
+    echo "linuxdeploy-plugin-qt 已存在，跳过下载。"
+fi
+
+# 下载 appimagetool
+if [ ! -f "$APPIMAGETOOL_PATH" ]; then
+    echo "下载 appimagetool..."
     wget -c -q "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -O "$APPIMAGETOOL_PATH"
-    chmod +x ./*.AppImage
-    echo "工具准备就绪。"
-)
+else
+    echo "appimagetool 已存在，跳过下载。"
+fi
+
+chmod +x "${LINUXDEPLOY_PATH}" "${QT_PLUGIN_PATH}" "${APPIMAGETOOL_PATH}"
+echo "工具准备就绪。"
+
 
 # --- 2. 构建项目 ---
 echo ""
@@ -65,7 +97,7 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 (
     cd "$BUILD_DIR"
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release "${PROJECT_ROOT}"
     ninja
 )
 echo "构建完成。"
@@ -92,6 +124,8 @@ EOF
 cp "${APPDIR_PATH}/${PROJECT_NAME}.desktop" "${APPDIR_PATH}/usr/share/applications/"
 cp "${ICON_FILE}" "${APPDIR_PATH}/usr/share/icons/hicolor/256x256/apps/${PROJECT_NAME}.png"
 ln -s "usr/share/icons/hicolor/256x256/apps/${PROJECT_NAME}.png" "${APPDIR_PATH}/${PROJECT_NAME}.png"
+mkdir -p "${APPDIR_PATH}/assets/icons/"
+cp "${ICON_ICO_FILE}" "${APPDIR_PATH}/assets/icons/"
 
 echo "AppDir 准备就绪。"
 
@@ -102,7 +136,7 @@ echo "--- 步骤 4: 运行 linuxdeploy 填充依赖 ---"
     export LINUXDEPLOY_PLUGINS_PATH="${TOOLS_DIR}"
     export NO_STRIP=1
     export QMAKE=$(which qmake6)
-    export QML_SOURCES_PATHS="${PWD}/${QML_SOURCES_DIR}"
+    export QML_SOURCES_PATHS="${QML_SOURCES_DIR}"
 
     "$LINUXDEPLOY_PATH" --appdir "${APPDIR_PATH}" --plugin qt
 )
@@ -135,8 +169,9 @@ echo "自定义AppRun创建成功。"
 echo ""
 echo "--- 步骤 6: 创建最终的 AppImage 文件 ---"
 (
+    cd "${DIST_DIR}"
     export VERSION="${APP_VERSION}"
-    "$APPIMAGETOOL_PATH" "$APPDIR_PATH"
+    "$APPIMAGETOOL_PATH" "${APPDIR_PATH}"
 )
 
 # --- 7. 完成 ---
@@ -144,6 +179,6 @@ echo ""
 echo "=========================================="
 echo " AppImage 打包成功! "
 echo "=========================================="
-echo "文件位于: ${PWD}"
-ls -lh ./*.AppImage
+echo "文件位于: ${DIST_DIR}"
+ls -lh "${DIST_DIR}"/*.AppImage
 echo ""
