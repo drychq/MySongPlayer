@@ -65,6 +65,12 @@ public:
     Q_INVOKABLE AudioInfo* getAudioInfoAtIndex(int index) const;
 
     bool isDuplicateAudio(const QUrl& audioSource) const;
+    
+    // Diagnostic methods for Task 1
+    Q_INVOKABLE void forceRefresh();
+    Q_INVOKABLE bool validateModelState() const;
+    Q_INVOKABLE QStringList getModelDiagnostics() const;
+    Q_INVOKABLE void performModelDiagnostic() const;
 
 signals:
     void currentSongChanged();

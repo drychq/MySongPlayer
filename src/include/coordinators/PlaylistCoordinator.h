@@ -56,7 +56,7 @@ signals:
     void playlistLoaded(const QString &playlistName);
     void playlistDeleted(const QString &playlistName);
     void playlistRenamed(const QString &oldName, const QString &newName);
-    void currentPlaylistChanged(const QString &playlistName);\
+    void currentPlaylistChanged(const QString &playlistName);
 
 private slots:
     void onCurrentSongChanged();

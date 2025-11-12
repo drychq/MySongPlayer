@@ -12,7 +12,9 @@
 #include <QtQml/qqmlregistration.h>
 
 class AudioInfo;
+namespace SongPlayer {
 class PlaylistDatabase;
+}
 
 #include "models/PlaylistModel.h"
 
@@ -100,7 +102,7 @@ private:
     static constexpr const char* ERROR_NAME_TOO_LONG = "Playlist name is too long";
     static constexpr const char* ERROR_INVALID_CHARS = "Playlist name contains invalid characters";
 
-    std::unique_ptr<PlaylistDatabase> m_database;
+    std::unique_ptr<SongPlayer::PlaylistDatabase> m_database;
     QString m_lastError;
     bool m_initialized;
 

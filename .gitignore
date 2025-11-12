@@ -101,3 +101,6 @@ assets/videos/*
 assets/audio/*
 out/*
 *.AppImage
+
+# Clangd
+.cache
