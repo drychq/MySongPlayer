@@ -1,14 +1,37 @@
 // Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-23
 #include "coordinators/PlaylistCoordinator.h"
+#include "adapters/QtAudioTrackAdapter.h"
+#include "core/Playlist.h"
 #include "services/PlaylistStorageService.h"
 #include "models/PlaylistModel.h"
 #include <QRandomGenerator>
+
+#include <cstddef>
+#include <optional>
+
+namespace {
+
+QString defaultPlaylistName()
+{
+    return SongPlayer::QtAdapter::fromUtf8String(SongPlayer::Core::kDefaultPlaylistName);
+}
+
+std::optional<std::size_t> randomShuffleIndex(const PlaylistModel& playlistModel)
+{
+    if (playlistModel.playMode() != PlayMode::Shuffle || playlistModel.rowCount() <= 0) {
+        return std::nullopt;
+    }
+
+    return static_cast<std::size_t>(QRandomGenerator::global()->bounded(playlistModel.rowCount()));
+}
+
+} // namespace
 
 PlaylistCoordinator::PlaylistCoordinator(PlaylistModel *playlistModel, QObject *parent)
     : QObject(parent)
     , m_playlistModel(playlistModel)
     , m_storageService(nullptr) // This constructor is for scenarios where playlist persistence is not required.
-    , m_currentPlaylistName("Default Playlist")
+    , m_currentPlaylistName(defaultPlaylistName())
 {
     // Connect signals from the playlist model to handle changes in the current song or playlist structure.
     // These connections are fundamental for updating the UI and managing playback flow.
@@ -22,7 +45,7 @@ PlaylistCoordinator::PlaylistCoordinator(PlaylistModel *playlistModel, PlaylistS
     : QObject(parent)
     , m_playlistModel(playlistModel)
     , m_storageService(storageService)
-    , m_currentPlaylistName("Default Playlist")
+    , m_currentPlaylistName(defaultPlaylistName())
 {
     // Connect signals from the playlist model to handle changes in the current song or playlist structure.
     // These connections are fundamental for updating the UI and managing playback flow.
@@ -62,126 +85,40 @@ void PlaylistCoordinator::setCurrentSong(AudioInfo *newCurrentSong)
 }
 void PlaylistCoordinator::switchToNextSong()
 {
-    // Manages the transition to the next song in the playlist based on the current playback mode.
-    // This centralizes the logic for sequential, looping, and shuffled playback.
-    if (!m_playlistModel || m_playlistModel->rowCount() == 0) {
-        // If the playlist is empty, there's no song to switch to.
+    if (!m_playlistModel) {
         return;
     }
 
-    PlayMode playMode = m_playlistModel->playMode();
-    AudioInfo* currentSong = m_playlistModel->currentSong();
-
-    switch (playMode) {
-    case PlayMode::RepeatOne:
-    case PlayMode::Loop: {
-        // For RepeatOne and Loop modes, if no song is currently playing, start from the first song.
-        // This ensures playback begins predictably when the playlist is initiated or reset.
-        if (!currentSong) {
-            AudioInfo* firstSong = m_playlistModel->getAudioInfoAtIndex(0);
-            m_playlistModel->setCurrentSong(firstSong);
-            if (firstSong) {
-                emit requestAudioSourceChange(firstSong->audioSource());
-            }
-            return;
-        }
-
-        // Find the index of the current song to determine the next song in sequence.
-        // This linear search is acceptable given typical playlist sizes.
-        int currentIndex = -1;
-        for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
-            if (m_playlistModel->getAudioInfoAtIndex(i) == currentSong) {
-                currentIndex = i;
-                break;
-            }
-        }
-
-        // Calculate the index of the next song, wrapping around to the beginning of the playlist
-        // if the current song is the last one. This implements the looping behavior.
-        int nextIndex = (currentIndex + 1) % m_playlistModel->rowCount();
-        AudioInfo* nextSong = m_playlistModel->getAudioInfoAtIndex(nextIndex);
-        m_playlistModel->setCurrentSong(nextSong);
-        if (nextSong) {
-            emit requestAudioSourceChange(nextSong->audioSource());
-        }
-        break;
+    const std::optional<std::size_t> nextIndex = m_playlistModel->nextSongIndex(
+        randomShuffleIndex(*m_playlistModel));
+    if (!nextIndex) {
+        return;
     }
 
-    case PlayMode::Shuffle: {
-        // For Shuffle mode, a random song is selected from the entire playlist.
-        // This provides a non-sequential playback experience.
-        int randomIndex = QRandomGenerator::global()->bounded(m_playlistModel->rowCount());
-        AudioInfo* randomSong = m_playlistModel->getAudioInfoAtIndex(randomIndex);
-        m_playlistModel->setCurrentSong(randomSong);
-        if (randomSong) {
-            emit requestAudioSourceChange(randomSong->audioSource());
-        }
-        break;
-    }
+    AudioInfo* nextSong = m_playlistModel->getAudioInfoAtIndex(static_cast<int>(*nextIndex));
+    m_playlistModel->setCurrentSong(nextSong);
+    if (nextSong) {
+        emit requestAudioSourceChange(nextSong->audioSource());
     }
 }
 
 
 void PlaylistCoordinator::switchToPreviousSong()
 {
-    // Manages the transition to the previous song in the playlist based on the current playback mode.
-    // This centralizes the logic for sequential, looping, and shuffled playback in reverse.
-    if (!m_playlistModel || m_playlistModel->rowCount() == 0) {
-        // If the playlist is empty, there's no song to switch to.
+    if (!m_playlistModel) {
         return;
     }
 
-    PlayMode playMode = m_playlistModel->playMode();
-    AudioInfo* currentSong = m_playlistModel->currentSong();
-
-    switch (playMode) {
-
-    case PlayMode::RepeatOne:
-
-    case PlayMode::Loop: {
-        // For RepeatOne and Loop modes, if no song is currently playing, start from the last song.
-        // This ensures playback begins predictably when navigating backward from an empty state.
-        if (!currentSong) {
-            AudioInfo* lastSong = m_playlistModel->getAudioInfoAtIndex(m_playlistModel->rowCount() - 1);
-            m_playlistModel->setCurrentSong(lastSong);
-            if (lastSong) {
-                emit requestAudioSourceChange(lastSong->audioSource());
-            }
-            return;
-        }
-
-        // Find the index of the current song to determine the previous song in sequence.
-        // This linear search is acceptable given typical playlist sizes.
-        int currentIndex = -1;
-        for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
-            if (m_playlistModel->getAudioInfoAtIndex(i) == currentSong) {
-                currentIndex = i;
-                break;
-            }
-        }
-
-        // Calculate the index of the previous song, wrapping around to the end of the playlist
-        // if the current song is the first one. This implements the looping behavior.
-        int prevIndex = (currentIndex - 1 + m_playlistModel->rowCount()) % m_playlistModel->rowCount();
-        AudioInfo* prevSong = m_playlistModel->getAudioInfoAtIndex(prevIndex);
-        m_playlistModel->setCurrentSong(prevSong);
-        if (prevSong) {
-            emit requestAudioSourceChange(prevSong->audioSource());
-        }
-        break;
+    const std::optional<std::size_t> previousIndex = m_playlistModel->previousSongIndex(
+        randomShuffleIndex(*m_playlistModel));
+    if (!previousIndex) {
+        return;
     }
 
-    case PlayMode::Shuffle: {
-        // For Shuffle mode, a random song is selected from the entire playlist.
-        // This provides a non-sequential playback experience when navigating backward.
-        int randomIndex = QRandomGenerator::global()->bounded(m_playlistModel->rowCount());
-        AudioInfo* randomSong = m_playlistModel->getAudioInfoAtIndex(randomIndex);
-        m_playlistModel->setCurrentSong(randomSong);
-        if (randomSong) {
-            emit requestAudioSourceChange(randomSong->audioSource());
-        }
-        break;
-    }
+    AudioInfo* previousSong = m_playlistModel->getAudioInfoAtIndex(static_cast<int>(*previousIndex));
+    m_playlistModel->setCurrentSong(previousSong);
+    if (previousSong) {
+        emit requestAudioSourceChange(previousSong->audioSource());
     }
 }
 
@@ -259,15 +196,7 @@ bool PlaylistCoordinator::saveCurrentPlaylist(const QString &playlistName)
     // Determine the current playback mode and the index of the currently playing song.
     // This metadata is saved along with the playlist to restore the exact playback state.
     PlayMode playMode = m_playlistModel->playMode();
-    int currentIndex = -1;
-    if (m_playlistModel->currentSong()) {
-        for (int i = 0; i < audioItems.size(); ++i) {
-            if (audioItems[i] == m_playlistModel->currentSong()) {
-                currentIndex = i;
-                break;
-            }
-        }
-    }
+    const int currentIndex = m_playlistModel->currentSongIndex();
 
     // Delegate the actual saving operation to the PlaylistStorageService.
     // This decouples the playlist management logic from the persistence mechanism.
@@ -359,7 +288,7 @@ bool PlaylistCoordinator::deletePlaylist(const QString &playlistName)
         // If the currently active playlist is deleted, switch back to the default playlist.
         // This prevents the application from being in an inconsistent state with a non-existent active playlist.
         if (m_currentPlaylistName == playlistName) {
-            m_currentPlaylistName = "Default Playlist";
+            m_currentPlaylistName = defaultPlaylistName();
             emit currentPlaylistChanged(m_currentPlaylistName);
         }
     }

@@ -57,7 +57,7 @@ Item {
             to: 1
             value: PlayerController.muted ? 0 : PlayerController.volume
             enabled: !!PlayerController.currentSong
-            height: AppStyles.controlBarHeight
+            Layout.preferredHeight: AppStyles.controlBarHeight
             
             sliderColor: root.sliderColor
             backgroundColor: root.backgroundColor

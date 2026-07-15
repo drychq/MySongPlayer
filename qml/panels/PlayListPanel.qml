@@ -57,6 +57,8 @@ Rectangle {
       spacing: AppStyles.mediumSpacing
 
       delegate: AudioListItem {
+        required property var model
+
         audioTitle: model.audioTitle
         audioAuthor: model.audioAuthorName
         audioImageSource: model.audioImageSource
@@ -98,4 +100,3 @@ Rectangle {
     }
   }
 }
-

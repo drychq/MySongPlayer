@@ -7,7 +7,7 @@ AudioCoordinator::AudioCoordinator(AudioPlayer* audioPlayer, QObject* parent)
     : QObject(parent)
     , m_audioPlayer(audioPlayer)
     , m_currentSong(nullptr)
-    , m_playMode(SongPlayer::SafePlayMode{SongPlayer::PlayMode::Loop})
+    , m_playMode(SongPlayer::Core::PlayMode::Loop)
 {
     Q_ASSERT(m_audioPlayer != nullptr);
     connectAudioPlayerSignals();
@@ -124,12 +124,12 @@ void AudioCoordinator::setSource(const QUrl& source)
     emit sourceChanged(source);
 }
 
-SongPlayer::SafePlayMode AudioCoordinator::playMode() const
+SongPlayer::Core::PlayMode AudioCoordinator::playMode() const
 {
     return m_playMode;
 }
 
-void AudioCoordinator::setPlayMode(SongPlayer::SafePlayMode mode)
+void AudioCoordinator::setPlayMode(SongPlayer::Core::PlayMode mode)
 {
     if (m_playMode != mode) {
         m_playMode = mode;
@@ -141,14 +141,14 @@ void AudioCoordinator::setCurrentSong(AudioInfo* song)
 {
     if (m_currentSong != song) {
         m_currentSong = song;
-        
+
         if (m_currentSong) {
             setSource(m_currentSong->audioSource());
         } else {
-            setSource(QUrl()); 
-        
-        emit currentSongChanged(m_currentSong);
+            setSource(QUrl());
         }
+
+        emit currentSongChanged(m_currentSong);
     }
 }
 

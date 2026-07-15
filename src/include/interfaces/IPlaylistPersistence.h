@@ -1,7 +1,7 @@
 // Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #pragma once
 
-#include <QObject>
+#include <QString>
 #include <QStringList>
 
 class PlaylistStorageService;
@@ -18,6 +18,3 @@ public:
     virtual QString currentPlaylistName() const = 0;
     virtual PlaylistStorageService* storageService() const = 0;
 };
-
-Q_DECLARE_INTERFACE(IPlaylistPersistence, "com.songplayer.IPlaylistPersistence")
-

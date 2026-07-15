@@ -2,7 +2,8 @@
 
 #include <QObject>
 #include <QUrl>
-#include "templates/PlayModeEnum.h"
+
+#include "core/PlayMode.h"
 
 class AudioPlayer;
 class AudioInfo;
@@ -30,8 +31,8 @@ public:
     void setSource(const QUrl& source);
     
     // 播放模式管理
-    SongPlayer::SafePlayMode playMode() const;
-    void setPlayMode(SongPlayer::SafePlayMode mode);
+    SongPlayer::Core::PlayMode playMode() const;
+    void setPlayMode(SongPlayer::Core::PlayMode mode);
     
     // 当前歌曲管理
     void setCurrentSong(AudioInfo* song);
@@ -61,7 +62,7 @@ signals:
     void sourceChanged(const QUrl& source);
     
     // 播放模式信号
-    void playModeChanged(SongPlayer::SafePlayMode mode);
+    void playModeChanged(SongPlayer::Core::PlayMode mode);
     
     // 歌曲相关信号
     void currentSongChanged(AudioInfo* song);
@@ -97,7 +98,7 @@ private slots:
 private:
     AudioPlayer* m_audioPlayer;
     AudioInfo* m_currentSong;
-    SongPlayer::SafePlayMode m_playMode;
+    SongPlayer::Core::PlayMode m_playMode;
     QUrl m_currentSource;
     QString m_lastError;
     

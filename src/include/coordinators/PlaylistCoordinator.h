@@ -13,7 +13,6 @@ class PlaylistStorageService;
 class PlaylistCoordinator : public QObject, public ICurrentSongManager, public IPlaylistOperations, public IPlaylistPersistence
 {
     Q_OBJECT
-    Q_INTERFACES(ICurrentSongManager IPlaylistOperations IPlaylistPersistence)
 
 public:
     explicit PlaylistCoordinator(PlaylistModel *playlistModel, QObject *parent = nullptr);
