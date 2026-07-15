@@ -1,5 +1,9 @@
 #include "models/PlaylistSearchModel.h"
-#include <QSet>
+#include "adapters/QtAudioTrackAdapter.h"
+#include "core/Playlist.h"
+
+#include <utility>
+#include <vector>
 
 PlaylistSearchModel::PlaylistSearchModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -93,17 +97,44 @@ void PlaylistSearchModel::performSearch(const QVariantList &audioInfoList, const
         return;
     }
 
+    std::vector<SongPlayer::Core::AudioTrack> tracks;
+    std::vector<AudioInfo*> audioInfos;
+    std::vector<int> originalIndexes;
+    tracks.reserve(static_cast<std::size_t>(audioInfoList.size()));
+    audioInfos.reserve(static_cast<std::size_t>(audioInfoList.size()));
+    originalIndexes.reserve(static_cast<std::size_t>(audioInfoList.size()));
+
     for (int i = 0; i < audioInfoList.size(); ++i) {
         QObject* obj = qvariant_cast<QObject*>(audioInfoList[i]);
-        AudioInfo* audioInfo = qobject_cast<AudioInfo*>(obj);
-
-        if (audioInfo && matchesSearchCriteria(audioInfo, m_currentSearchText)) {
-            SearchResult result(audioInfo, i);
-            m_searchResults.append(result);
+        if (!obj || !obj->inherits(AudioInfo::staticMetaObject.className())) {
+            continue;
         }
+
+        auto* audioInfo = static_cast<AudioInfo*>(obj);
+        SongPlayer::Core::AudioTrack track = SongPlayer::QtAdapter::makeCoreTrack(
+            audioInfo->title(),
+            audioInfo->authorName(),
+            audioInfo->audioSource(),
+            audioInfo->imageSource(),
+            audioInfo->videoSource());
+        track.songIndex = audioInfo->songIndex();
+        tracks.push_back(std::move(track));
+        audioInfos.push_back(audioInfo);
+        originalIndexes.push_back(i);
     }
 
-    removeDuplicateResults();
+    const auto results = SongPlayer::Core::searchTracks(
+        tracks,
+        SongPlayer::QtAdapter::toUtf8String(m_currentSearchText));
+
+    for (const SongPlayer::Core::PlaylistSearchResult& result : results) {
+        const std::size_t trackIndex = result.originalIndex;
+        if (trackIndex >= audioInfos.size()) {
+            continue;
+        }
+
+        m_searchResults.append(SearchResult(audioInfos[trackIndex], originalIndexes[trackIndex]));
+    }
 
     endResetModel();
     setIsSearching(false);
@@ -117,50 +148,4 @@ void PlaylistSearchModel::clearSearch()
     beginResetModel();
     m_searchResults.clear();
     endResetModel();
-}
-
-bool PlaylistSearchModel::matchesSearchCriteria(AudioInfo* audioInfo, const QString &searchText) const
-{
-    if (!audioInfo || searchText.isEmpty()) {
-        return false;
-    }
-
-    QString searchLower = searchText.toLower();
-
-    if (audioInfo->title().toLower().contains(searchLower)) {
-        return true;
-    }
-
-    if (audioInfo->authorName().toLower().contains(searchLower)) {
-        return true;
-    }
-
-    return false;
-}
-
-void PlaylistSearchModel::removeDuplicateResults()
-{
-    if (m_searchResults.isEmpty()) {
-        return;
-    }
-
-    QSet<QUrl> seenSources;
-    auto it = m_searchResults.begin();
-    int originalCount = m_searchResults.size();
-
-    while (it != m_searchResults.end()) {
-        if (it->audioInfo && seenSources.contains(it->audioInfo->audioSource())) {
-            it = m_searchResults.erase(it);
-        } else if (it->audioInfo) {
-            seenSources.insert(it->audioInfo->audioSource());
-            ++it;
-        } else {
-            it = m_searchResults.erase(it);
-        }
-    }
-
-    int finalCount = m_searchResults.size();
-    if (originalCount != finalCount) {
-
-    }
 }

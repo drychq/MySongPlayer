@@ -1,5 +1,16 @@
-#include "LyricsModel.h"
-#include "controllers/PlayerController.h"
+#include "models/LyricsModel.h"
+
+#include <optional>
+#include <utility>
+
+namespace {
+
+QString toQString(const std::string& value)
+{
+    return QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size()));
+}
+
+} // namespace
 
 LyricsModel::LyricsModel(QObject *parent)
     : QObject(parent)
@@ -17,11 +28,11 @@ void LyricsModel::setShowLyrics(bool show)
     }
 }
 
-void LyricsModel::setLyrics(const QList<LyricsService::LyricLine>& lyrics)
+void LyricsModel::setLyrics(std::vector<SongPlayer::Core::LyricLine> lyrics)
 {
-    m_lyrics = lyrics;
+    m_lyrics = std::move(lyrics);
 
-    bool hasLyrics = !lyrics.isEmpty();
+    bool hasLyrics = !m_lyrics.empty();
     if (m_hasLyrics != hasLyrics) {
         m_hasLyrics = hasLyrics;
         emit hasLyricsChanged();
@@ -44,7 +55,7 @@ void LyricsModel::setLyrics(const QList<LyricsService::LyricLine>& lyrics)
 
 void LyricsModel::updatePosition(qint64 position)
 {
-    if (m_lyrics.isEmpty()) {
+    if (m_lyrics.empty()) {
         return;
     }
 
@@ -57,8 +68,8 @@ void LyricsModel::updatePosition(qint64 position)
 
         // Update current lyric text
         QString newCurrentLyric;
-        if (newIndex >= 0 && newIndex < m_lyrics.size()) {
-            newCurrentLyric = m_lyrics[newIndex].text;
+        if (newIndex >= 0 && static_cast<std::size_t>(newIndex) < m_lyrics.size()) {
+            newCurrentLyric = toQString(m_lyrics[static_cast<std::size_t>(newIndex)].text);
         }
 
         if (m_currentLyric != newCurrentLyric) {
@@ -103,8 +114,8 @@ void LyricsModel::updateAllLyrics()
 {
     m_allLyrics.clear();
 
-    for (const auto& lyricLine : std::as_const(m_lyrics)) {
-        m_allLyrics.append(lyricLine.text);
+    for (const auto& lyricLine : m_lyrics) {
+        m_allLyrics.append(toQString(lyricLine.text));
     }
 
     emit allLyricsChanged();
@@ -112,26 +123,14 @@ void LyricsModel::updateAllLyrics()
 
 int LyricsModel::findLyricIndexByPosition(qint64 position)
 {
-    if (m_lyrics.isEmpty()) {
+    if (m_lyrics.empty()) {
         return -1;
     }
 
-    int left = 0;
-    int right = m_lyrics.size() - 1;
-    int result = -1;
-
-    while (left <= right) {
-        int mid = left + (right - left) / 2;
-
-        if (m_lyrics[mid].timestamp <= position) {
-            result = mid;
-            left = mid + 1;
-        } else {
-            right = mid - 1;
-        }
+    const std::optional<std::size_t> index = SongPlayer::Core::lyricIndexAtPosition(m_lyrics, position);
+    if (!index) {
+        return -1;
     }
 
-    return result;
+    return static_cast<int>(*index);
 }
-
-

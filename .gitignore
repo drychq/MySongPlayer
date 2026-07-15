@@ -82,7 +82,8 @@ CMakeLists.txt.user*
 .rcc/
 .uic/
 /build*/
-/out
+/tools
+/dist
 
 # JetBrains
 .idea/
@@ -98,8 +99,11 @@ atlassian-ide-plugin.xml
 assets/images/*
 assets/videos/*
 assets/audio/*
-
-# Build and package file
+out/*
 *.AppImage
-/dist
-/tools
+
+# Demo and other distribution media belong in GitHub Releases.
+/demoVideo.mp4
+
+# Clangd
+.cache

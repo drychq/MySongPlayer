@@ -12,9 +12,7 @@ AudioPlayer::AudioPlayer(QObject *parent)
 
     connect(&m_mediaPlayer, &QMediaPlayer::durationChanged, this, &AudioPlayer::durationChanged);
 
-    connect(&m_mediaPlayer, &QMediaPlayer::positionChanged, this, [this](qint64 position) {
-        emit positionChanged();
-    });
+    connect(&m_mediaPlayer, &QMediaPlayer::positionChanged, this, &AudioPlayer::positionChanged);
 
     connect(&m_mediaPlayer, &QMediaPlayer::mediaStatusChanged, this, &AudioPlayer::onMediaStatusChanged);
 
@@ -154,4 +152,3 @@ void AudioPlayer::onPlayStateChanged(QMediaPlayer::PlaybackState state)
         qDebug() << "AudioPlayer: Playing state changed to:" << (m_playing ? "playing" : "stopped/paused");
     }
 }
-

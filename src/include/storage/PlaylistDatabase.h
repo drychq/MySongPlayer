@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-07-04
 #pragma once
 
 #include <QObject>
@@ -12,9 +11,12 @@
 #include <QStandardPaths>
 #include <QDir>
 
+namespace SongPlayer {
+
 class PlaylistDatabase : public QObject
 {
     Q_OBJECT
+
 public:
     explicit PlaylistDatabase(QObject *parent = nullptr);
     virtual ~PlaylistDatabase();
@@ -54,3 +56,5 @@ private:
     bool createPlaylistItemsTable();
     bool createIndexes();
 };
+
+}

@@ -1,8 +1,4 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #pragma once
-
-#include <QObject>
-#include <QUrl>
 
 class AudioInfo;
 
@@ -18,5 +14,3 @@ public:
     virtual void handlePlayFinished() = 0;
 
 };
-
-Q_DECLARE_INTERFACE(ICurrentSongManager, "com.songplayer.ICurrentSongManager")

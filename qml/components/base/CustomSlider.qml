@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
 import QtQuick.Controls
 import MySongPlayer
@@ -76,7 +75,7 @@ Slider {
                 let clickX = eventPoint.position.x
 
                 if (Math.abs(clickX - handleX) > handleArea / 2) {
-                    let clickPosition = Math.max(0, Math.min(1, clickX / width))
+                    let clickPosition = Math.max(0, Math.min(1, clickX / root.width))
                     root.clicked(clickPosition)
                 }
             }

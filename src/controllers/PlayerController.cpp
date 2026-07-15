@@ -1,19 +1,26 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #include "controllers/PlayerController.h"
+#include "adapters/QtAudioTrackAdapter.h"
+#include "core/Playlist.h"
 #include "controllers/AudioPlayer.h"
 #include "coordinators/PlaylistCoordinator.h"
 #include "interfaces/IPlaylistOperations.h"
+#include "models/LyricsModel.h"
 #include "services/AudioImporter.h"
+#include "services/LyricsService.h"
+#include "services/PlaylistStorageService.h"
 #include <QTimer>
+
+#include <utility>
 
 PlayerController::PlayerController(QObject *parent)
     : QObject{parent}
     , m_audioPlayer{new AudioPlayer(this)}
     , m_playlistModel{new PlaylistModel(this)}
-    , m_audioImporter{new AudioImporter(this)}
+    , m_audioImporter{new SongPlayer::AudioImporter(this)}
     , m_lyricsService{new LyricsService(this)}
     , m_lyricsModel{new LyricsModel(this)}
     , m_playlistStorageService(new PlaylistStorageService(this))
+    , m_saveTimer(new QTimer(this))
 {
     if (!m_playlistStorageService->initialize()) {
         qCritical() << "Playlist storage service initialization failed:" << m_playlistStorageService->lastError();
@@ -25,9 +32,9 @@ PlayerController::PlayerController(QObject *parent)
      * This design promotes modularity and testability by allowing the PlayerController to interact
      * with playlist functionalities through well-defined interfaces rather than direct concrete classes.
      */
-    m_currentSongManager = qobject_cast<ICurrentSongManager*>(playlistCoordinator);
-    m_playlistOperations = qobject_cast<IPlaylistOperations*>(playlistCoordinator);
-    m_playlistPersistence = qobject_cast<IPlaylistPersistence*>(playlistCoordinator);
+    m_currentSongManager = static_cast<ICurrentSongManager*>(playlistCoordinator);
+    m_playlistOperations = static_cast<IPlaylistOperations*>(playlistCoordinator);
+    m_playlistPersistence = static_cast<IPlaylistPersistence*>(playlistCoordinator);
 
     connect(playlistCoordinator, &PlaylistCoordinator::requestAudioSourceChange,
             this, &PlayerController::onAudioSourceChangeRequested);
@@ -54,8 +61,24 @@ PlayerController::PlayerController(QObject *parent)
     connect(m_playlistModel, &PlaylistModel::playModeChanged,
             this, &PlayerController::playModeChanged);
 
-    connect(m_audioImporter, &AudioImporter::audioImported,
+    connect(m_audioImporter, &SongPlayer::AudioImporter::audioImported,
             this, &PlayerController::onAudioImported);
+    connect(m_audioImporter, &SongPlayer::AudioImporter::importingChanged,
+            this, &PlayerController::importingChanged);
+    connect(m_audioImporter, &SongPlayer::AudioImporter::importProgressChanged,
+            this, &PlayerController::importProgressChanged);
+    connect(m_audioImporter, &SongPlayer::AudioImporter::importStarted,
+            this, &PlayerController::importStarted);
+    connect(m_audioImporter, &SongPlayer::AudioImporter::importStarted,
+            this, &PlayerController::onImportStarted);
+    connect(m_audioImporter, &SongPlayer::AudioImporter::importFinished,
+            this, &PlayerController::importFinished);
+    connect(m_audioImporter, &SongPlayer::AudioImporter::importFinished,
+            this, &PlayerController::onImportFinished);
+    connect(m_audioImporter, &SongPlayer::AudioImporter::importRejected,
+            this, &PlayerController::importRejected);
+    connect(m_audioImporter, &SongPlayer::AudioImporter::importFailed,
+            this, &PlayerController::importFailed);
 
     connect(m_playlistModel, &PlaylistModel::duplicateAudioSkipped,
             this, &PlayerController::duplicateAudioSkipped);
@@ -68,6 +91,20 @@ PlayerController::PlayerController(QObject *parent)
             this, &PlayerController::onPlaylistChanged);
     connect(m_playlistModel, &PlaylistModel::playModeChanged,
             this, &PlayerController::onPlaylistChanged);
+
+    m_saveTimer->setSingleShot(true);
+    m_saveTimer->setInterval(2000);
+    connect(m_saveTimer, &QTimer::timeout, this, [this]() {
+        const QString playlistName = SongPlayer::QtAdapter::fromUtf8String(
+            SongPlayer::Core::kDefaultPlaylistName);
+        const bool success = m_playlistPersistence->saveCurrentPlaylist(playlistName);
+        if (success) {
+            qDebug() << "PlayerController: Playlist auto-save successful";
+        } else {
+            qWarning() << "PlayerController: Playlist auto-save failed:"
+                       << m_playlistPersistence->storageService()->lastError();
+        }
+    });
 
     loadDefaultPlaylistOnStartup();
 }
@@ -177,6 +214,10 @@ void PlayerController::removeAudio(int index)
 
 void PlayerController::clearPlaylist()
 {
+    if (importing()) {
+        emit importRejected(QStringLiteral("Wait for the active import or cancel it before clearing the playlist"));
+        return;
+    }
     m_playlistOperations->clearPlaylist();
 }
 
@@ -192,6 +233,10 @@ bool PlayerController::saveCurrentPlaylist(const QString &playlistName)
 
 bool PlayerController::loadPlaylist(const QString &playlistName)
 {
+    if (importing()) {
+        emit importRejected(QStringLiteral("Wait for the active import or cancel it before loading another playlist"));
+        return false;
+    }
     return m_playlistPersistence->loadPlaylist(playlistName);
 }
 
@@ -219,6 +264,11 @@ void PlayerController::importLocalAudio(const QList<QUrl> &fileUrls)
 {
     qDebug() << "PlayerController: Starting local audio import for" << fileUrls.size() << "files";
     m_audioImporter->importLocalAudio(fileUrls);
+}
+
+void PlayerController::cancelAudioImport()
+{
+    m_audioImporter->cancelImport();
 }
 
 void PlayerController::addNetworkAudio(const QString &title, const QString &authorName,
@@ -265,8 +315,8 @@ void PlayerController::onCurrentSongChanged()
     if (currentSong) {
         QString audioFilePath = currentSong->audioSource().toLocalFile();
         if (!audioFilePath.isEmpty()) {
-            QList<LyricsService::LyricLine> lyrics = m_lyricsService->parseLrcFile(audioFilePath);
-            m_lyricsModel->setLyrics(lyrics);
+            auto lyrics = m_lyricsService->parseLrcFile(audioFilePath);
+            m_lyricsModel->setLyrics(std::move(lyrics));
         } else {
             // Clear lyrics if the audio source is not a local file (e.g., network stream) or path is empty.
             m_lyricsModel->clearLyrics();
@@ -288,30 +338,42 @@ LyricsModel* PlayerController::lyricsModel() const
     return m_lyricsModel;
 }
 
+bool PlayerController::importing() const
+{
+    return m_audioImporter->importing();
+}
+
+int PlayerController::importCompleted() const
+{
+    return m_audioImporter->importCompleted();
+}
+
+int PlayerController::importTotal() const
+{
+    return m_audioImporter->importTotal();
+}
+
 void PlayerController::onPlaylistChanged()
 {
-    static QTimer* saveTimer = nullptr;
-    if (!saveTimer) {
-        // Initialize a single-shot timer for auto-saving the playlist.
-        // This approach debounces playlist changes, preventing excessive write operations
-        // to storage during rapid modifications (e.g., adding multiple songs).
-        // The timer ensures that the playlist is saved only after a short period of inactivity.
-        saveTimer = new QTimer(this);
-        saveTimer->setSingleShot(true);
-        saveTimer->setInterval(2000); // Auto-save after 2 seconds of no further changes.
-        connect(saveTimer, &QTimer::timeout, this, [this]() {
-            bool success = m_playlistPersistence->saveCurrentPlaylist("Default Playlist");
-            if (success) {
-                qDebug() << "PlayerController: Playlist auto-save successful";
-            } else {
-                qWarning() << "PlayerController: Playlist auto-save failed:" << m_playlistPersistence->storageService()->lastError();
-            }
-        });
+    if (importing()) {
+        m_playlistDirtyDuringImport = true;
+        return;
     }
+    m_saveTimer->start();
+}
 
-    // Restart the timer on every playlist change. If changes occur rapidly, the timer is reset,
-    // effectively delaying the save operation until a pause in activity.
-    saveTimer->start();
+void PlayerController::onImportStarted()
+{
+    m_playlistDirtyDuringImport = m_saveTimer->isActive();
+    m_saveTimer->stop();
+}
+
+void PlayerController::onImportFinished()
+{
+    if (m_playlistDirtyDuringImport) {
+        m_saveTimer->start();
+        m_playlistDirtyDuringImport = false;
+    }
 }
 
 void PlayerController::loadDefaultPlaylistOnStartup()
@@ -321,7 +383,9 @@ void PlayerController::loadDefaultPlaylistOnStartup()
     // that might occur if playlist loading (which involves file I/O) happens too early
     // in the application startup sequence.
     QTimer::singleShot(100, this, [this]() {
-        bool success = m_playlistPersistence->loadPlaylist("Default Playlist");
+        const QString playlistName = SongPlayer::QtAdapter::fromUtf8String(
+            SongPlayer::Core::kDefaultPlaylistName);
+        const bool success = m_playlistPersistence->loadPlaylist(playlistName);
         if (success) {
             qInfo() << "Default playlist loaded successfully";
         } else {
@@ -329,4 +393,3 @@ void PlayerController::loadDefaultPlaylistOnStartup()
         }
     });
 }
-

@@ -1,15 +1,18 @@
 #pragma once
 
+#include "core/Lyrics.h"
+
 #include <QObject>
 #include <QString>
 #include <QStringList>
 #include <QtQml/qqmlregistration.h>
-#include "services/LyricsService.h"
+#include <vector>
 
 class LyricsModel : public QObject
 {
     Q_OBJECT
     QML_ELEMENT
+    QML_UNCREATABLE("LyricsModel instances are provided by C++")
 
     Q_PROPERTY(bool hasLyrics READ hasLyrics NOTIFY hasLyricsChanged)
     Q_PROPERTY(QString currentLyric READ currentLyric NOTIFY currentLyricChanged)
@@ -27,7 +30,7 @@ public:
     int currentLineIndex() const { return m_currentLineIndex; }
 
     void setShowLyrics(bool show);
-    void setLyrics(const QList<LyricsService::LyricLine>& lyrics);
+    void setLyrics(std::vector<SongPlayer::Core::LyricLine> lyrics);
 
     void updatePosition(qint64 position);
     void clearLyrics();
@@ -43,7 +46,7 @@ signals:
     void currentLineIndexChanged();
 
 private:
-    QList<LyricsService::LyricLine> m_lyrics;
+    std::vector<SongPlayer::Core::LyricLine> m_lyrics;
     QStringList m_allLyrics;
 
     int m_currentLineIndex;

@@ -13,7 +13,6 @@ class PlaylistStorageService;
 class PlaylistCoordinator : public QObject, public ICurrentSongManager, public IPlaylistOperations, public IPlaylistPersistence
 {
     Q_OBJECT
-    Q_INTERFACES(ICurrentSongManager IPlaylistOperations IPlaylistPersistence)
 
 public:
     explicit PlaylistCoordinator(PlaylistModel *playlistModel, QObject *parent = nullptr);
@@ -56,7 +55,7 @@ signals:
     void playlistLoaded(const QString &playlistName);
     void playlistDeleted(const QString &playlistName);
     void playlistRenamed(const QString &oldName, const QString &newName);
-    void currentPlaylistChanged(const QString &playlistName);\
+    void currentPlaylistChanged(const QString &playlistName);
 
 private slots:
     void onCurrentSongChanged();

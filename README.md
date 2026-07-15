@@ -1,48 +1,60 @@
 # MySongPlayer
 
-![Qt Version](https://img.shields.io/badge/Qt-6.8%20LTS-green.svg)
+![Qt Version](https://img.shields.io/badge/Qt-6.11-green.svg)
 ![C++ Standard](https://img.shields.io/badge/C++-23-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20|%20Windows%20|%20macOS-lightgray.svg)
 ![Build System](https://img.shields.io/badge/Build-CMake-orange.svg)
 
-一个基于 Qt 6.8 LTS 的现代音乐播放器，采用 C++23 标准和 MVC + Coordinator 架构模式开发。MySongPlayer 提供了完整的音频播放功能、播放列表管理、歌词同步显示等特性，并支持从本地文件或通过 Jamendo API 导入网络歌曲。
+一个基于 C++23 与 Qt 6.11 的跨平台音乐播放器。业务核心使用标准库实现，Qt 被限制在 QML 界面、音频、网络、数据库和平台适配边界；这样既保留 Qt 的跨平台能力，也避免业务逻辑与 Qt 类型深度绑定。
 
 ##  技术栈
 
 | 技术领域 | 技术选择 | 版本要求 |
 |---|---|---|
-| **界面框架** | Qt Quick/QML | 6.8 LTS |
+| **界面框架** | Qt Quick/QML | 6.11+ |
 | **编程语言** | C++ | C++23 |
-| **音频处理** | Qt Multimedia | 6.8+ |
-| **数据存储** | Qt SQL (SQLite) | 6.8+ |
-| **元数据解析** | TagLib | 最新版本 |
+| **音频处理** | Qt Multimedia | 6.11+ |
+| **数据存储** | Qt SQL (SQLite) | 6.11+ |
+| **元数据解析** | TagLib | 2.0+ |
 | **构建系统** | CMake | 3.28+ |
 
 ##  核心功能
 
 - **全功能音频播放**：支持多种格式、音量与进度控制、多种播放模式（顺序、循环、随机等）。
 - **播放列表管理**：支持向当前播放列表添加、移除歌曲，并自动持久化保存。
-- **多方式音频导入**：支持从本地文件、文件夹及网络 URL 导入音频。
+- **非阻塞音频导入**：本地多文件元数据与封面在有界后台任务中处理，支持进度、取消和逐文件错误；同时保留网络 URL 导入。
 - **模糊与精确搜索**：支持在全局曲库和当前歌单中快速搜索歌曲。
 - **实时歌词同步**：自动加载并同步显示 LRC 格式的歌词。
+
+## 架构边界
+
+- `src/core`：可移植业务核心，仅允许 C++ 标准库，不链接 Qt。
+- `src/adapters`：Qt 类型与核心类型之间的显式转换边界。
+- `src/infrastructure`：TagLib 等第三方能力对核心端口的实现；不依赖 Qt。
+- `src/models`、`src/controllers`、`src/coordinators`：面向 QML 的应用与展示层。
+- `src/services`、`src/storage`：Qt Multimedia、Qt Network 和 Qt SQL 等平台能力适配。
+- `qml`：只负责展示与用户交互，不承载业务规则。
+
+CMake 会扫描全部核心文件并拒绝 Qt、TagLib 和外层模块 include；`MYSONGPLAYER_BUILD_UI=OFF` 可在不查找 Qt/TagLib 的情况下独立构建核心。详细规则见 [架构说明](./doc/ARCHITECTURE.md)。
 
 ##  快速开始
 
 ### 系统要求
 
 - **操作系统**: Linux, Windows 10+, macOS 12+
-- **编译器**: GCC 13+, Clang 16+, 或 MSVC 2022+
-- **Qt 版本**: Qt 6.8 LTS 或更高版本
+- **编译器**: 支持项目所用 C++23 特性的 GCC、Clang 或 MSVC
+- **Qt 版本**: Qt 6.11 或更高版本
 - **CMake**: 3.28 或更高版本
-- **TagLib**: 最新版本
+- **构建器**: Ninja 1.11 或更高版本（项目 Presets 默认使用 Ninja）
+- **TagLib**: 2.0 或更高版本
 
 ### 依赖安装
 
 #### Manjaro/Arch Linux
 ```bash
-# 安装 Qt 6.8 LTS 和开发工具
+# 安装发行版提供的 Qt 6 开发组件；版本不足 6.11 时请使用 Qt 官方安装器
 sudo pacman -S qt6-base qt6-multimedia qt6-declarative qt6-sql
-sudo pacman -S cmake base-devel
+sudo pacman -S cmake ninja base-devel
 sudo pacman -S taglib
 
 # 安装 pkg-config (用于 TagLib 检测)
@@ -58,30 +70,34 @@ vcpkg install qt6[core,multimedia,quick,sql] taglib
 #### macOS
 ```bash
 # 使用 Homebrew 安装依赖
-brew install qt@6 cmake taglib
+brew install qt@6 cmake ninja taglib
 export PATH="/opt/homebrew/opt/qt@6/bin:$PATH"
 ```
 
 ### 构建和运行
 
-#### 标准构建流程
+#### 推荐构建流程
 
 ```bash
 # 克隆项目
 git clone https://github.com/drychq/MySongPlayer.git
 cd MySongPlayer
 
-# 创建构建目录
-mkdir build && cd build
-
-# 配置 CMake
-cmake .. -DCMAKE_BUILD_TYPE=Release
-
-# 编译项目
-cmake --build . --parallel
+# Qt 应用：Debug + C++ warnings-as-errors
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
 
 # 运行应用程序
-./appMySongPlayer
+./build/dev/appMySongPlayer
+```
+
+仅验证标准库核心（不会查找 Qt 或 TagLib）：
+
+```bash
+cmake --preset core-only
+cmake --build --preset core-only
+ctest --preset core-only
 ```
 
 ##  项目结构
@@ -116,3 +132,7 @@ bash build-appimage.sh
 ## 开发文档
 
 关于项目的架构设计、模块功能和开发规范的详细信息，请参阅 [开发文档](./doc/DEVELOPMENT.md)。
+
+## 参与贡献
+
+项目采用单主线、短主题分支、Pull Request 和 Squash Merge 的轻量工作流。分支命名、提交规范、测试要求与发布约定见 [贡献指南](./CONTRIBUTING.md)。

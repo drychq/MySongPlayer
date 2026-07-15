@@ -1,27 +1,27 @@
 #pragma once
 
 #include <QAbstractListModel>
-#include <QRandomGenerator>
+#include <QList>
+#include <QStringList>
 #include <QtQml/qqmlregistration.h>
+#include <cstddef>
+#include <optional>
+#include "core/Playlist.h"
 #include "models/AudioInfo.h"
 
-enum class PlayMode {
-    Loop,
-    Shuffle,
-    RepeatOne
-};
+using PlayMode = SongPlayer::Core::PlayMode;
 
 class PlayModeWrapper : public QObject
 {
     Q_OBJECT
-    QML_ELEMENT
+    QML_NAMED_ELEMENT(PlayMode)
     QML_UNCREATABLE("PlayMode is only accessible as an enum")
 
 public:
     enum PlayMode {
-        Loop = static_cast<int>(::PlayMode::Loop),
-        Shuffle = static_cast<int>(::PlayMode::Shuffle),
-        RepeatOne = static_cast<int>(::PlayMode::RepeatOne)
+        Loop = static_cast<int>(SongPlayer::Core::PlayMode::Loop),
+        Shuffle = static_cast<int>(SongPlayer::Core::PlayMode::Shuffle),
+        RepeatOne = static_cast<int>(SongPlayer::Core::PlayMode::RepeatOne)
     };
     Q_ENUM(PlayMode)
 };
@@ -29,6 +29,8 @@ public:
 class PlaylistModel : public QAbstractListModel
 {
     Q_OBJECT
+    QML_ELEMENT
+    QML_UNCREATABLE("PlaylistModel instances are provided by C++")
     Q_PROPERTY(AudioInfo* currentSong READ currentSong WRITE setCurrentSong NOTIFY currentSongChanged)
 
 public:
@@ -50,6 +52,8 @@ public:
 
     AudioInfo *currentSong() const;
     void setCurrentSong(AudioInfo *newCurrentSong);
+    std::optional<std::size_t> currentIndex() const noexcept;
+    int currentSongIndex() const;
 
     PlayMode playMode() const;
     void setPlayMode(PlayMode newMode);
@@ -65,6 +69,16 @@ public:
     Q_INVOKABLE AudioInfo* getAudioInfoAtIndex(int index) const;
 
     bool isDuplicateAudio(const QUrl& audioSource) const;
+    std::optional<std::size_t> nextSongIndex(
+        std::optional<std::size_t> shuffleIndex = std::nullopt) const noexcept;
+    std::optional<std::size_t> previousSongIndex(
+        std::optional<std::size_t> shuffleIndex = std::nullopt) const noexcept;
+
+    // Diagnostic methods for Task 1
+    Q_INVOKABLE void forceRefresh();
+    Q_INVOKABLE bool validateModelState() const;
+    Q_INVOKABLE QStringList getModelDiagnostics() const;
+    Q_INVOKABLE void performModelDiagnostic() const;
 
 signals:
     void currentSongChanged();
@@ -73,11 +87,7 @@ signals:
 
 private:
     QList<AudioInfo*> m_audioList;
+    SongPlayer::Core::Playlist m_playlist;
     AudioInfo *m_currentSong = nullptr;
-    PlayMode m_playMode = PlayMode::Loop;
-    QList<int> m_shuffleIndices;  // Index sequence for shuffle mode
-    int m_currentShuffleIndex = -1;  // Current position in shuffle sequence
-    void generateShuffleSequence();
+    void syncCoreCurrentSong();
 };
-
-

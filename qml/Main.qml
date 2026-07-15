@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-19
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
@@ -128,6 +127,35 @@ ApplicationWindow {
         currentFolder: StandardPaths.standardLocations(StandardPaths.MusicLocation)[0]
         onAccepted: {
             PlayerController.importLocalAudio(audioFileDialog.selectedFiles)
+        }
+    }
+
+    Frame {
+        anchors.top: topContainer.bottom
+        anchors.right: parent.right
+        anchors.margins: 12
+        z: 10
+        visible: PlayerController.importing
+
+        RowLayout {
+            spacing: 10
+
+            BusyIndicator {
+                running: PlayerController.importing
+                Layout.preferredWidth: 28
+                Layout.preferredHeight: 28
+            }
+
+            Label {
+                text: qsTr("Importing %1 / %2")
+                    .arg(PlayerController.importCompleted)
+                    .arg(PlayerController.importTotal)
+            }
+
+            Button {
+                text: qsTr("Cancel")
+                onClicked: PlayerController.cancelAudioImport()
+            }
         }
     }
 }

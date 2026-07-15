@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-20
 import QtQuick
 import QtQuick.Layouts
 import MySongPlayer
@@ -57,6 +56,8 @@ Rectangle {
       spacing: AppStyles.mediumSpacing
 
       delegate: AudioListItem {
+        required property var model
+
         audioTitle: model.audioTitle
         audioAuthor: model.audioAuthorName
         audioImageSource: model.audioImageSource
@@ -98,4 +99,3 @@ Rectangle {
     }
   }
 }
-

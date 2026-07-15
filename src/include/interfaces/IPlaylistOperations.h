@@ -1,10 +1,10 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #pragma once
 
-#include <QObject>
-#include <QUrl>
 #include <QList>
+#include <QString>
+#include <QUrl>
 
+class QObject;
 class PlaylistModel;
 
 class IPlaylistOperations
@@ -21,5 +21,3 @@ public:
     virtual PlaylistModel* playlistModel() const = 0;
     virtual QList<QObject*> getPlaylistAudioInfoList() const = 0;
 };
-
-Q_DECLARE_INTERFACE(IPlaylistOperations, "com.songplayer.IPlaylistOperations")

@@ -1,20 +1,19 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-07-04
 #pragma once
 
 #include <QObject>
 #include <QList>
 #include <QString>
-#include <QUrl>
 #include <QVariant>
 #include <QDateTime>
 #include <QSqlQuery>
-#include <QRegularExpression>
-#include <QtQml/qqmlregistration.h>
+#include <memory>
+
+#include "core/PlayMode.h"
 
 class AudioInfo;
+namespace SongPlayer {
 class PlaylistDatabase;
-
-#include "models/PlaylistModel.h"
+}
 
 /**
  * @brief Playlist storage structure
@@ -24,7 +23,7 @@ struct PlaylistInfo {
     QString name;
     QDateTime createdAt;
     QDateTime updatedAt;
-    PlayMode playMode;
+    SongPlayer::Core::PlayMode playMode = SongPlayer::Core::PlayMode::Loop;
     int currentIndex = -1;
     QList<AudioInfo*> audioItems;
 };
@@ -43,8 +42,6 @@ struct PlaylistInfo {
 class PlaylistStorageService : public QObject
 {
     Q_OBJECT
-    QML_ELEMENT
-    QML_UNCREATABLE("PlaylistStorageService instances are created and managed by C++")
 
 public:
     explicit PlaylistStorageService(QObject *parent = nullptr);
@@ -56,7 +53,7 @@ public:
 
     Q_INVOKABLE bool savePlaylist(const QString &playlistName,
                                   const QList<AudioInfo*> &audioItems,
-                                  PlayMode playMode = PlayMode::Loop,
+                                  SongPlayer::Core::PlayMode playMode = SongPlayer::Core::PlayMode::Loop,
                                   int currentIndex = -1);
 
     Q_INVOKABLE PlaylistInfo loadPlaylist(const QString &playlistName);
@@ -67,7 +64,10 @@ public:
     Q_INVOKABLE bool addAudioToPlaylist(const QString &playlistName, AudioInfo *audioInfo);
     Q_INVOKABLE bool removeAudioFromPlaylist(const QString &playlistName, int position);
     Q_INVOKABLE bool moveAudioInPlaylist(const QString &playlistName, int fromPosition, int toPosition);
-    Q_INVOKABLE bool updatePlaylistState(const QString &playlistName, PlayMode playMode, int currentIndex);
+    Q_INVOKABLE bool updatePlaylistState(
+        const QString &playlistName,
+        SongPlayer::Core::PlayMode playMode,
+        int currentIndex);
 
     Q_INVOKABLE QList<AudioInfo*> findDuplicateAudioItems();
     Q_INVOKABLE bool cleanupUnusedAudioItems();
@@ -95,12 +95,11 @@ private slots:
     void onDatabaseError(const QString &error);
 
 private:
-    static constexpr const char* DEFAULT_PLAYLIST_NAME = "Default playlist";
     static constexpr const char* ERROR_EMPTY_NAME = "Playlist name cannot be empty";
     static constexpr const char* ERROR_NAME_TOO_LONG = "Playlist name is too long";
     static constexpr const char* ERROR_INVALID_CHARS = "Playlist name contains invalid characters";
 
-    std::unique_ptr<PlaylistDatabase> m_database;
+    std::unique_ptr<SongPlayer::PlaylistDatabase> m_database;
     QString m_lastError;
     bool m_initialized;
 

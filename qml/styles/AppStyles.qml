@@ -1,5 +1,4 @@
 /*
- Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-25
  This file defines the global application theme, including colors, fonts, and layout constants.
  To be used as a singleton throughout the application for consistent styling.
 */
