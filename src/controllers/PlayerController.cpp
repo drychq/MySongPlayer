@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #include "controllers/PlayerController.h"
 #include "controllers/AudioPlayer.h"
 #include "coordinators/PlaylistCoordinator.h"

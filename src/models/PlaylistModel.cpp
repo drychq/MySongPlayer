@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-22
 #include "models/PlaylistModel.h"
 
 PlaylistModel::PlaylistModel(QObject *parent)

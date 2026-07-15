@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-23
 #include "coordinators/PlaylistCoordinator.h"
 #include "services/PlaylistStorageService.h"
 #include "models/PlaylistModel.h"

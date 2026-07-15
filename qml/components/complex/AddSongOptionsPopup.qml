@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-25
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

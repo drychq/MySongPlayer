@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-07-04
 #include "storage/PlaylistDatabase.h"
 
 PlaylistDatabase::PlaylistDatabase(QObject *parent)

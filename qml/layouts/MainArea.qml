@@ -1,4 +1,3 @@
-// Written by HanQin Chen (cqnuchq@outlook.com) 2025-06-17
 import QtQuick
 import MySongPlayer
 
