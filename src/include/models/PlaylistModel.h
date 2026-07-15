@@ -73,7 +73,7 @@ public:
         std::optional<std::size_t> shuffleIndex = std::nullopt) const noexcept;
     std::optional<std::size_t> previousSongIndex(
         std::optional<std::size_t> shuffleIndex = std::nullopt) const noexcept;
-    
+
     // Diagnostic methods for Task 1
     Q_INVOKABLE void forceRefresh();
     Q_INVOKABLE bool validateModelState() const;
