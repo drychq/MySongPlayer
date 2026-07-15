@@ -20,7 +20,7 @@ void AudioCoordinator::playPause()
         setError("AudioPlayer is not available");
         return;
     }
-    
+
     clearError();
     m_audioPlayer->playPause();
 }
@@ -31,7 +31,7 @@ void AudioCoordinator::play()
         setError("AudioPlayer is not available");
         return;
     }
-    
+
     if (!isPlaying()) {
         clearError();
         m_audioPlayer->playPause();
@@ -44,7 +44,7 @@ void AudioCoordinator::pause()
         setError("AudioPlayer is not available");
         return;
     }
-    
+
     if (isPlaying()) {
         clearError();
         m_audioPlayer->playPause();
@@ -57,7 +57,7 @@ void AudioCoordinator::stop()
         setError("AudioPlayer is not available");
         return;
     }
-    
+
     clearError();
     m_audioPlayer->stop();
     emit playStopped();
@@ -69,12 +69,12 @@ void AudioCoordinator::setPosition(qint64 position)
         setError("AudioPlayer is not available");
         return;
     }
-    
+
     if (position < 0) {
         setError("Invalid position: position cannot be negative");
         return;
     }
-    
+
     clearError();
     m_audioPlayer->setPosition(position);
 }
@@ -85,12 +85,12 @@ void AudioCoordinator::setVolume(float volume)
         setError("AudioPlayer is not available");
         return;
     }
-    
+
     if (volume < 0.0f || volume > 1.0f) {
         setError("Invalid volume: volume must be between 0.0 and 1.0");
         return;
     }
-    
+
     clearError();
     m_audioPlayer->setVolume(volume);
 }
@@ -101,7 +101,7 @@ void AudioCoordinator::setMuted(bool muted)
         setError("AudioPlayer is not available");
         return;
     }
-    
+
     clearError();
     m_audioPlayer->setMuted(muted);
 }
@@ -112,12 +112,12 @@ void AudioCoordinator::setSource(const QUrl& source)
         setError("AudioPlayer is not available");
         return;
     }
-    
+
     if (!source.isValid() && !source.isEmpty()) {
         setError("Invalid audio source URL");
         return;
     }
-    
+
     clearError();
     m_currentSource = source;
     m_audioPlayer->setSource(source);
@@ -219,13 +219,13 @@ void AudioCoordinator::onAudioPlayerPlayingChanged()
 {
     bool playing = isPlaying();
     emit playingChanged(playing);
-    
+
     if (playing) {
         emit playStarted();
     } else {
         emit playPaused();
     }
-    
+
     updatePlayingState();
 }
 
@@ -258,29 +258,29 @@ void AudioCoordinator::onAudioPlayerPlayFinished()
 void AudioCoordinator::connectAudioPlayerSignals()
 {
     if (!m_audioPlayer) return;
-    
+
     connect(m_audioPlayer, &AudioPlayer::playingChanged,
             this, &AudioCoordinator::onAudioPlayerPlayingChanged);
-    
+
     connect(m_audioPlayer, &AudioPlayer::positionChanged,
             this, &AudioCoordinator::onAudioPlayerPositionChanged);
-    
+
     connect(m_audioPlayer, &AudioPlayer::durationChanged,
             this, &AudioCoordinator::onAudioPlayerDurationChanged);
-    
+
     connect(m_audioPlayer, &AudioPlayer::volumeChanged,
             this, &AudioCoordinator::onAudioPlayerVolumeChanged);
-    
+
     connect(m_audioPlayer, &AudioPlayer::mutedChanged,
             this, &AudioCoordinator::onAudioPlayerMutedChanged);
-    
+
     connect(m_audioPlayer, &AudioPlayer::playFinished,
             this, &AudioCoordinator::onAudioPlayerPlayFinished);
 }
 
 void AudioCoordinator::updatePlayingState()
 {
-    
+
 }
 
 void AudioCoordinator::setError(const QString& error)
