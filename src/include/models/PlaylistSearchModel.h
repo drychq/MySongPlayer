@@ -2,17 +2,14 @@
 
 #include <QAbstractListModel>
 #include <QtQml/qqmlregistration.h>
-#include <QGuiApplication>
-#include <QQmlEngine>
-#include <QJSEngine>
 
 #include "models/AudioInfo.h"
 
 class PlaylistSearchModel : public QAbstractListModel
 {
     Q_OBJECT
+    QML_ELEMENT
     QML_SINGLETON
-    QML_NAMED_ELEMENT(PlaylistSearchModel)
     Q_PROPERTY(bool isSearching READ isSearching NOTIFY isSearchingChanged)
 
 public:
@@ -24,12 +21,6 @@ public:
         OriginalIndexRole
     };
     Q_ENUM(Role)
-
-    static QObject* provider(QQmlEngine *engine, QJSEngine *scriptEngine) {
-        Q_UNUSED(engine); Q_UNUSED(scriptEngine);
-        auto model = new PlaylistSearchModel(QGuiApplication::instance());
-        return model;
-    }
 
     explicit PlaylistSearchModel(QObject *parent = nullptr);
     virtual ~PlaylistSearchModel();
@@ -59,10 +50,6 @@ private:
         SearchResult() : audioInfo(nullptr), originalIndex(-1) {}
         SearchResult(AudioInfo* info, int index) : audioInfo(info), originalIndex(index) {}
     };
-
-    bool matchesSearchCriteria(AudioInfo* audioInfo, const QString &searchText) const;
-
-    void removeDuplicateResults();
 
     QList<SearchResult> m_searchResults;
     bool m_isSearching;

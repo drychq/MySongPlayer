@@ -1,67 +1,64 @@
 #pragma once
 
-#include <QDir>
-#include <QFileInfo>
+#include "core/AudioImport.h"
+
+#include <QList>
 #include <QObject>
+#include <QString>
 #include <QUrl>
 
-namespace TagLib {
-class ByteVector;
-
-namespace ID3v2 {
-class AttachedPictureFrame;
-}
-} // namespace TagLib
+#include <memory>
 
 namespace SongPlayer {
-/**
- * @brief Audio import service class responsible for importing and parsing audio
- * files
- *
- * This class focuses on the following responsibilities:
- * - Import audio files from local file system
- * - Parse audio metadata (using TagLib)
- * - Pass parsing results to playlist model
- */
-class AudioImporter : public QObject {
-  Q_OBJECT
+
+class AudioImporter final : public QObject {
+    Q_OBJECT
+
+    Q_PROPERTY(bool importing READ importing NOTIFY importingChanged)
+    Q_PROPERTY(int importCompleted READ importCompleted NOTIFY importProgressChanged)
+    Q_PROPERTY(int importTotal READ importTotal NOTIFY importProgressChanged)
 
 public:
-  explicit AudioImporter(QObject *parent = nullptr);
+    explicit AudioImporter(QObject* parent = nullptr);
+    explicit AudioImporter(
+        std::shared_ptr<const Core::IAudioMetadataReader> metadataReader,
+        QObject* parent = nullptr);
+    ~AudioImporter() override;
 
-  Q_INVOKABLE void importLocalAudio(const QList<QUrl> &fileUrls);
+    [[nodiscard]] bool importing() const noexcept;
+    [[nodiscard]] int importCompleted() const noexcept;
+    [[nodiscard]] int importTotal() const noexcept;
 
-  Q_INVOKABLE bool addEnglishCoverArt(const QString &filePath,
-                                      const QString &coverImagePath);
+    Q_INVOKABLE void importLocalAudio(const QList<QUrl>& fileUrls);
+    Q_INVOKABLE void cancelImport();
 
 signals:
-  void audioImported(const QString &title, const QString &authorName,
-                     const QUrl &audioSource, const QUrl &imageSource);
+    void importingChanged();
+    void importProgressChanged();
+    void importStarted(int total);
+    void importFinished(int imported, int failed, bool canceled);
+    void importRejected(const QString& reason);
+    void importFailed(const QUrl& source, const QString& reason);
+
+    void audioImported(const QString& title,
+                       const QString& authorName,
+                       const QUrl& audioSource,
+                       const QUrl& imageSource);
 
 private:
-  void processAudioFile(const QFileInfo &fileInfo);
+    struct ImportSession;
 
-  QUrl extractCoverArt(const QString &filePath);
+    void handleResult(int resultIndex);
+    void handleFinished();
+    void resetProgress(int total, int initialFailures);
 
-  QDir prepareCoverDirectory();
-
-  QUrl extractCoverFromFile(const QString &audioFilePath,
-                            const QString &targetCoverPath);
-
-  bool savePictureToFile(const TagLib::ByteVector &pictureData,
-                         const QString &filePath);
-
-  bool validateInputFiles(const QString &audioFilePath,
-                          const QString &coverFilePath);
-
-  QByteArray readCoverImageData(const QString &coverFilePath);
-
-  bool writeCoverToAudioFile(const QString &filePath,
-                             const QString &coverImagePath,
-                             const QByteArray &coverData);
-
-  void setMimeTypeForFrame(TagLib::ID3v2::AttachedPictureFrame *frame,
-                           const QString &extension);
+    std::shared_ptr<const Core::IAudioMetadataReader> m_metadataReader;
+    std::unique_ptr<ImportSession> m_session;
+    bool m_importing = false;
+    int m_importCompleted = 0;
+    int m_importTotal = 0;
+    int m_importedCount = 0;
+    int m_failedCount = 0;
 };
 
 } // namespace SongPlayer

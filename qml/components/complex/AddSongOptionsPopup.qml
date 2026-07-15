@@ -60,7 +60,7 @@ Popup {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 50
-                color: localImportTapHandler.hovered ? Qt.lighter(AppStyles.primaryColor, 1.2) : AppStyles.primaryColor
+                color: localImportHoverHandler.hovered ? Qt.lighter(AppStyles.primaryColor, 1.2) : AppStyles.primaryColor
                 radius: 6
 
                 Behavior on color {
@@ -97,12 +97,16 @@ Popup {
                     id: localImportTapHandler
                     onTapped: root.localImportRequested()
                 }
+
+                HoverHandler {
+                    id: localImportHoverHandler
+                }
             }
 
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 50
-                color: networkImportTapHandler.hovered ? Qt.lighter(AppStyles.surfaceColor, 1.3) : Qt.lighter(AppStyles.surfaceColor, 1.1)
+                color: networkImportHoverHandler.hovered ? Qt.lighter(AppStyles.surfaceColor, 1.3) : Qt.lighter(AppStyles.surfaceColor, 1.1)
                 radius: 6
                 border.color: AppStyles.primaryColor
                 border.width: 1
@@ -140,6 +144,10 @@ Popup {
                 TapHandler {
                     id: networkImportTapHandler
                     onTapped:  root.networkImportRequested()
+                }
+
+                HoverHandler {
+                    id: networkImportHoverHandler
                 }
             }
         }

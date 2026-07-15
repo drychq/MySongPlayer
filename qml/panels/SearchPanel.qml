@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 
@@ -69,7 +71,7 @@ Rectangle {
         spacing: 5
 
         Text {
-          width: parent.width
+          Layout.fillWidth: true
 
           text: delegate.audioTitle
           color: AppStyles.textPrimary
@@ -85,7 +87,7 @@ Rectangle {
         }
 
         Text {
-          width: parent.width
+          Layout.fillWidth: true
 
           text: delegate.audioAuthorName
           color: AppStyles.textSecondary

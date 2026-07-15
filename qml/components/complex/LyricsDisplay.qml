@@ -1,5 +1,6 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
-import QtQuick.Controls
 import MySongPlayer
 
 Item {
@@ -49,6 +50,9 @@ Item {
             
             delegate: Item {
                 id: lyricItem
+                required property int index
+                required property string modelData
+
                 width: lyricsListView.width
                 height: lyricText.height + AppStyles.smallSpacing * 2
                 
@@ -57,13 +61,13 @@ Item {
                     anchors.centerIn: parent
                     width: parent.width - AppStyles.mediumSpacing * 2
                     
-                    text: modelData
-                    color: (root.lyricsModel && index === root.lyricsModel.currentLineIndex) ? 
+                    text: lyricItem.modelData
+                    color: (root.lyricsModel && lyricItem.index === root.lyricsModel.currentLineIndex) ?
                            root.highlightTextColor : root.primaryTextColor
                     
-                    font.pixelSize: (root.lyricsModel && index === root.lyricsModel.currentLineIndex) ? 
+                    font.pixelSize: (root.lyricsModel && lyricItem.index === root.lyricsModel.currentLineIndex) ?
                                    AppStyles.titleFont.pixelSize : AppStyles.bodyFont.pixelSize
-                    font.weight: (root.lyricsModel && index === root.lyricsModel.currentLineIndex) ? 
+                    font.weight: (root.lyricsModel && lyricItem.index === root.lyricsModel.currentLineIndex) ?
                                 Font.DemiBold : Font.Normal
                     
                     horizontalAlignment: Text.AlignHCenter
@@ -84,7 +88,7 @@ Item {
                         }
                     }
                     
-                    opacity: (root.lyricsModel && index === root.lyricsModel.currentLineIndex) ? 1.0 : 0.7
+                    opacity: (root.lyricsModel && lyricItem.index === root.lyricsModel.currentLineIndex) ? 1.0 : 0.7
                     
                     Behavior on opacity {
                         NumberAnimation {

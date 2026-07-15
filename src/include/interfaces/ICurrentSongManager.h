@@ -1,8 +1,5 @@
 #pragma once
 
-#include <QObject>
-#include <QUrl>
-
 class AudioInfo;
 
 class ICurrentSongManager
@@ -17,5 +14,3 @@ public:
     virtual void handlePlayFinished() = 0;
 
 };
-
-Q_DECLARE_INTERFACE(ICurrentSongManager, "com.songplayer.ICurrentSongManager")

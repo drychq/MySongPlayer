@@ -1,13 +1,15 @@
 #pragma once
 
 #include <QObject>
+#include <QString>
 #include <QUrl>
-#include <qqml.h>
+#include <QtQml/qqmlregistration.h>
 
 class AudioInfo : public QObject
 {
     Q_OBJECT
     QML_ELEMENT
+    QML_UNCREATABLE("AudioInfo instances are provided by C++")
 
     Q_PROPERTY(int songIndex READ songIndex WRITE setSongIndex NOTIFY songIndexChanged REQUIRED)
     Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
@@ -47,12 +49,10 @@ signals:
     void audioSourceChanged();
 
 private:
-    int m_songIndex;
+    int m_songIndex = -1;
     QString m_title;
     QString m_authorName;
     QUrl m_imageSource;
     QUrl m_videoSource;
     QUrl m_audioSource;
 };
-
-

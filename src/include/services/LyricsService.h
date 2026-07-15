@@ -1,31 +1,23 @@
 #pragma once
 
+#include "core/Lyrics.h"
+
+#include <QHash>
 #include <QObject>
 #include <QString>
-#include <QList>
-#include <QUrl>
-#include <QtQml/qqmlregistration.h>
-#include <QHash>
-
+#include <QStringList>
+#include <vector>
 
 class LyricsService : public QObject
 {
     Q_OBJECT
-    QML_ELEMENT
 
 public:
-    struct LyricLine {
-        qint64 timestamp;
-        QString text;
-
-        bool operator<(const LyricLine& other) const {
-            return timestamp < other.timestamp;
-        }
-    };
+    using LyricLine = SongPlayer::Core::LyricLine;
 
     explicit LyricsService(QObject *parent = nullptr);
 
-    Q_INVOKABLE QList<LyricLine> parseLrcFile(const QString& audioFilePath);
+    std::vector<LyricLine> parseLrcFile(const QString& audioFilePath);
 
     Q_INVOKABLE bool hasLyricsFile(const QString& audioFilePath);
 
@@ -34,15 +26,7 @@ private:
 
     QString findBestLrcMatch(const QString& audioFilePath);
 
-    QString preprocessFileName(const QString& fileName);
-
-    double calculateMatchScore(const QString& audioName, const QString& lrcName);
-
     QStringList scanDirectoryForLrcFiles(const QString& dirPath);
-
-    QList<LyricLine> parseLrcContent(const QString& content);
-
-    qint64 parseTimestamp(const QString& timeString);
 
 private:
     QHash<QString, QStringList> m_directoryCache;

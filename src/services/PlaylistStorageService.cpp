@@ -1,7 +1,8 @@
 #include "services/PlaylistStorageService.h"
+#include "adapters/QtAudioTrackAdapter.h"
+#include "core/Playlist.h"
 #include "storage/PlaylistDatabase.h"
 #include "models/AudioInfo.h"
-#include "models/PlaylistModel.h"
 #include <QDateTime>
 #include <QSqlQuery>
 #include <QSqlRecord>
@@ -9,8 +10,18 @@
 #include <QVariantList>
 #include <memory>
 #include <QDebug>
+#include <optional>
+#include <stdexcept>
+#include <string>
 
 namespace {
+    const QString& defaultPlaylistName()
+    {
+        static const QString name = SongPlayer::QtAdapter::fromUtf8String(
+            SongPlayer::Core::kDefaultPlaylistName);
+        return name;
+    }
+
     QUrl normalizeImagePath(const QString& originalPath) {
         if (originalPath.isEmpty()) {
             return QUrl("qrc:/qt/qml/MySongPlayer/assets/icons/app_icon.png");
@@ -26,14 +37,26 @@ namespace {
         
         return QUrl(originalPath);
     }
+
+    std::u16string toU16String(const QString& value)
+    {
+        std::u16string result;
+        result.reserve(static_cast<std::size_t>(value.size()));
+
+        for (const QChar character : value) {
+            result.push_back(static_cast<char16_t>(character.unicode()));
+        }
+
+        return result;
+    }
 }
 
 PlaylistStorageService::PlaylistStorageService(QObject *parent)
     : QObject(parent)
-    , m_database(std::make_unique<PlaylistDatabase>(this))
+    , m_database(std::make_unique<SongPlayer::PlaylistDatabase>(this))
     , m_initialized(false)
 {
-    connect(m_database.get(), &PlaylistDatabase::databaseError,
+    connect(m_database.get(), &SongPlayer::PlaylistDatabase::databaseError,
             this, &PlaylistStorageService::onDatabaseError);
 }
 
@@ -85,7 +108,7 @@ bool PlaylistStorageService::isInitialized() const
 
 bool PlaylistStorageService::savePlaylist(const QString &playlistName,
                                           const QList<AudioInfo*> &audioItems,
-                                          PlayMode playMode,
+                                          SongPlayer::Core::PlayMode playMode,
                                           int currentIndex)
 {
     if (!checkInitialized()) {
@@ -235,7 +258,7 @@ bool PlaylistStorageService::deletePlaylist(const QString &playlistName)
         return false;
     }
 
-    if (playlistName == DEFAULT_PLAYLIST_NAME) {
+    if (playlistName == defaultPlaylistName()) {
         m_lastError = "Cannot delete default playlist";
         emit errorOccurred(m_lastError);
         return false;
@@ -325,7 +348,7 @@ bool PlaylistStorageService::createDefaultPlaylist()
 {
     QSqlQuery query = m_database->executeQuery(
         "SELECT COUNT(*) FROM playlists WHERE name = ?",
-        QVariantList() << DEFAULT_PLAYLIST_NAME
+        QVariantList() << defaultPlaylistName()
         );
 
     if (query.next() && query.value(0).toInt() > 0) {
@@ -334,22 +357,23 @@ bool PlaylistStorageService::createDefaultPlaylist()
 
     return m_database->executeNonQuery(
         "INSERT INTO playlists (name, play_mode, current_index) VALUES (?, ?, ?)",
-        QVariantList() << DEFAULT_PLAYLIST_NAME << static_cast<int>(PlayMode::Loop) << -1
+        QVariantList() << defaultPlaylistName()
+                       << static_cast<int>(SongPlayer::Core::PlayMode::Loop)
+                       << -1
         );
 }
 
 void PlaylistStorageService::validatePlaylistName(const QString &name)
 {
-    if (name.isEmpty()) {
+    const std::u16string nameText = toU16String(name);
+    switch (SongPlayer::Core::validatePlaylistName(nameText)) {
+    case SongPlayer::Core::PlaylistNameValidationError::None:
+        return;
+    case SongPlayer::Core::PlaylistNameValidationError::Empty:
         throw std::invalid_argument(ERROR_EMPTY_NAME);
-    }
-
-    if (name.length() > 100) {
+    case SongPlayer::Core::PlaylistNameValidationError::TooLong:
         throw std::invalid_argument(ERROR_NAME_TOO_LONG);
-    }
-
-    static const QRegularExpression invalidCharsRegex("[<>:\"/\\\\|?*]");
-    if (name.contains(invalidCharsRegex)) {
+    case SongPlayer::Core::PlaylistNameValidationError::InvalidCharacter:
         throw std::invalid_argument(ERROR_INVALID_CHARS);
     }
 }
@@ -361,7 +385,7 @@ PlaylistInfo PlaylistStorageService::playlistInfoFromQuery(const QSqlQuery &quer
     info.name = query.value("name").toString();
     info.createdAt = query.value("created_at").toDateTime();
     info.updatedAt = query.value("updated_at").toDateTime();
-    info.playMode = static_cast<PlayMode>(query.value("play_mode").toInt());
+    info.playMode = static_cast<SongPlayer::Core::PlayMode>(query.value("play_mode").toInt());
     info.currentIndex = query.value("current_index").toInt();
     return info;
 }
@@ -421,10 +445,16 @@ bool PlaylistStorageService::removeAudioFromPlaylist(const QString &playlistName
         return false;
     }
 
+    const std::optional<std::size_t> currentIndex = playlist.currentIndex >= 0
+        ? std::make_optional(static_cast<std::size_t>(playlist.currentIndex))
+        : std::nullopt;
+    const std::optional<std::size_t> nextCurrentIndex = SongPlayer::Core::playlistCurrentIndexAfterRemoval(
+        static_cast<std::size_t>(playlist.audioItems.size()),
+        currentIndex,
+        static_cast<std::size_t>(position));
+
     playlist.audioItems.removeAt(position);
-    if (playlist.currentIndex >= position && playlist.currentIndex > 0) {
-        playlist.currentIndex--;
-    }
+    playlist.currentIndex = nextCurrentIndex ? static_cast<int>(*nextCurrentIndex) : -1;
 
     return savePlaylist(playlistName, playlist.audioItems, playlist.playMode, playlist.currentIndex);
 }
@@ -445,7 +475,10 @@ bool PlaylistStorageService::moveAudioInPlaylist(const QString &playlistName, in
     return savePlaylist(playlistName, playlist.audioItems, playlist.playMode, playlist.currentIndex);
 }
 
-bool PlaylistStorageService::updatePlaylistState(const QString &playlistName, PlayMode playMode, int currentIndex)
+bool PlaylistStorageService::updatePlaylistState(
+    const QString &playlistName,
+    SongPlayer::Core::PlayMode playMode,
+    int currentIndex)
 {
     if (!checkInitialized()) {
         return false;
@@ -530,5 +563,3 @@ bool PlaylistStorageService::checkInitialized()
     }
     return true;
 }
-
-

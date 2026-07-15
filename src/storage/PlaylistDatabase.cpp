@@ -1,5 +1,7 @@
 #include "storage/PlaylistDatabase.h"
 
+namespace SongPlayer {
+
 PlaylistDatabase::PlaylistDatabase(QObject *parent)
     : QObject{parent}
     , m_databasePath(getDatabasePath())
@@ -57,8 +59,11 @@ void PlaylistDatabase::closeDatabase()
         m_database.close();
     }
 
-    if (QSqlDatabase::contains(DATABASE_CONNECTION_NAME)) {
-        QSqlDatabase::removeDatabase(DATABASE_CONNECTION_NAME);
+    const QString connectionName = QString::fromLatin1(DATABASE_CONNECTION_NAME);
+    m_database = {};
+
+    if (QSqlDatabase::contains(connectionName)) {
+        QSqlDatabase::removeDatabase(connectionName);
     }
 }
 
@@ -200,6 +205,7 @@ QString PlaylistDatabase::getDatabasePath()
         // If creation fails, fall back to the system's temporary directory to ensure the application can still function.
         if (!appDir.mkpath(".")) {
             appDataPath = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+            appDir.setPath(appDataPath);
         }
     }
 
@@ -311,4 +317,4 @@ bool PlaylistDatabase::createIndexes()
     return true;
 }
 
-
+} // namespace SongPlayer
