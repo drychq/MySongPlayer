@@ -30,45 +30,64 @@ Rectangle {
         anchors.margins: AppStyles.smallSpacing
         spacing: AppStyles.smallSpacing
 
-        Image {
-            id: audioImage
-            Layout.preferredWidth: AppStyles.mediumIcon
-            Layout.preferredHeight: AppStyles.mediumIcon
-            Layout.alignment: Qt.AlignVCenter
-            source: root.audioImageSource
-            visible: root.showImage
-            mipmap: true
-            fillMode: Image.PreserveAspectFit
-        }
-
-        ColumnLayout {
+        Item {
+            id: selectionArea
+            // Test hook for the offscreen pointer-routing regression test.
+            objectName: "selectionArea"
             Layout.fillWidth: true
-            spacing: AppStyles.smallSpacing
+            Layout.fillHeight: true
 
+            RowLayout {
+                anchors.fill: parent
+                spacing: AppStyles.smallSpacing
 
-            Text {
-                Layout.fillWidth: true
-                text: root.audioTitle
-                color: root.textPrimaryColor
-                fontSizeMode: Text.Fit
-                minimumPixelSize: 12
-                elide: Text.ElideRight
-                font: AppStyles.subtitleFont
+                Image {
+                    id: audioImage
+                    Layout.preferredWidth: AppStyles.mediumIcon
+                    Layout.preferredHeight: AppStyles.mediumIcon
+                    Layout.alignment: Qt.AlignVCenter
+                    source: root.audioImageSource
+                    visible: root.showImage
+                    mipmap: true
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: AppStyles.smallSpacing
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.audioTitle
+                        color: root.textPrimaryColor
+                        fontSizeMode: Text.Fit
+                        minimumPixelSize: 12
+                        elide: Text.ElideRight
+                        font: AppStyles.subtitleFont
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.audioAuthor
+                        color: root.textSecondaryColor
+                        fontSizeMode: Text.Fit
+                        minimumPixelSize: 8
+                        elide: Text.ElideRight
+                        font: AppStyles.smallFont
+                    }
+                }
             }
 
-            Text {
-                Layout.fillWidth: true
-                text: root.audioAuthor
-                color: root.textSecondaryColor
-                fontSizeMode: Text.Fit
-                minimumPixelSize: 8
-                elide: Text.ElideRight
-                font: AppStyles.smallFont
+            TapHandler {
+                gesturePolicy: TapHandler.ReleaseWithinBounds
+                onTapped: root.clicked()
             }
         }
 
         ImageButton {
             id: actionButton
+            // Test hook paired with selectionArea to verify mutually exclusive taps.
+            objectName: "actionButton"
             Layout.preferredWidth: AppStyles.mediumIcon
             Layout.preferredHeight: AppStyles.mediumIcon
             Layout.alignment: Qt.AlignVCenter
@@ -76,12 +95,6 @@ Rectangle {
             visible: root.showActionButton
             onClicked: root.actionClicked()
         }
-    }
-
-
-    TapHandler {
-        gesturePolicy: TapHandler.ReleaseWithinBounds
-        onTapped: root.clicked()
     }
 
 
@@ -99,4 +112,3 @@ Rectangle {
         }
     }
 }
-

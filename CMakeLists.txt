@@ -180,6 +180,9 @@ find_package(Qt6 ${QT_REQUIRED_VERSION} REQUIRED COMPONENTS
     Quick
     Sql
 )
+if(BUILD_TESTING)
+    find_package(Qt6 ${QT_REQUIRED_VERSION} REQUIRED COMPONENTS QuickTest)
+endif()
 find_package(TagLib 2.0 REQUIRED)
 
 qt_standard_project_setup(REQUIRES ${QT_REQUIRED_VERSION})
@@ -406,6 +409,25 @@ if(BUILD_TESTING)
     mysongplayer_enable_warnings(MySongPlayerNetworkSearchTests)
     add_test(NAME MySongPlayerNetworkSearchTests COMMAND MySongPlayerNetworkSearchTests)
     set_tests_properties(MySongPlayerNetworkSearchTests PROPERTIES TIMEOUT 10)
+
+    add_executable(MySongPlayerQmlInteractionTests
+        tests/qml/quicktest_main.cpp
+    )
+    target_link_libraries(MySongPlayerQmlInteractionTests PRIVATE
+        ${APP_CORE_TARGET}
+        ${APP_CORE_TARGET}plugin
+        Qt6::QuickTest
+    )
+    target_compile_definitions(MySongPlayerQmlInteractionTests PRIVATE
+        QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml"
+    )
+    target_compile_features(MySongPlayerQmlInteractionTests PRIVATE cxx_std_23)
+    mysongplayer_enable_warnings(MySongPlayerQmlInteractionTests)
+    add_test(NAME MySongPlayerQmlInteractionTests COMMAND MySongPlayerQmlInteractionTests)
+    set_tests_properties(MySongPlayerQmlInteractionTests PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML2_IMPORT_PATH=${CMAKE_CURRENT_BINARY_DIR}"
+        TIMEOUT 30
+    )
 
     add_test(
         NAME MySongPlayerQmlLint

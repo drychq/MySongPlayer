@@ -75,6 +75,8 @@ Popup {
                     spacing: AppStyles.mediumSpacing
 
                     ImageButton {
+                        // Test hook for the offscreen single-signal interaction test.
+                        objectName: "localImportButton"
                         Layout.preferredWidth: AppStyles.mediumIcon
                         Layout.preferredHeight: AppStyles.mediumIcon
                         source: AppStyles.addIcon
@@ -84,18 +86,27 @@ Popup {
                         }
                     }
 
-                    Text {
+                    Item {
+                        // Test hook paired with localImportButton to verify disjoint tap regions.
+                        objectName: "localImportSelectionArea"
                         Layout.fillWidth: true
-                        text: qsTr("Add from local file")
-                        font: AppStyles.bodyFont
-                        color: AppStyles.textPrimary
-                        horizontalAlignment: Text.AlignLeft
-                    }
-                }
+                        Layout.fillHeight: true
 
-                TapHandler {
-                    id: localImportTapHandler
-                    onTapped: root.localImportRequested()
+                        Text {
+                            anchors.fill: parent
+                            text: qsTr("Add from local file")
+                            font: AppStyles.bodyFont
+                            color: AppStyles.textPrimary
+                            horizontalAlignment: Text.AlignLeft
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        TapHandler {
+                            id: localImportTapHandler
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: root.localImportRequested()
+                        }
+                    }
                 }
 
                 HoverHandler {
@@ -132,18 +143,25 @@ Popup {
                         }
                     }
 
-                    Text {
+                    Item {
                         Layout.fillWidth: true
-                        text: qsTr("Add from network")
-                        font: AppStyles.bodyFont
-                        color: AppStyles.textPrimary
-                        horizontalAlignment: Text.AlignLeft
-                    }
-                }
+                        Layout.fillHeight: true
 
-                TapHandler {
-                    id: networkImportTapHandler
-                    onTapped:  root.networkImportRequested()
+                        Text {
+                            anchors.fill: parent
+                            text: qsTr("Add from network")
+                            font: AppStyles.bodyFont
+                            color: AppStyles.textPrimary
+                            horizontalAlignment: Text.AlignLeft
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        TapHandler {
+                            id: networkImportTapHandler
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: root.networkImportRequested()
+                        }
+                    }
                 }
 
                 HoverHandler {
