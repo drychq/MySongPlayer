@@ -19,8 +19,6 @@ public:
 
     std::vector<LyricLine> parseLrcFile(const QString& audioFilePath);
 
-    Q_INVOKABLE bool hasLyricsFile(const QString& audioFilePath);
-
 private:
     QString findLrcFile(const QString& audioFilePath);
 

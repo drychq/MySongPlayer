@@ -10,7 +10,7 @@
 namespace SongPlayer::Core {
 
 struct LyricLine {
-    std::int64_t timestampMs = 0;
+    std::int64_t timestampMs{0};
     std::string text;
 
     [[nodiscard]] bool operator<(const LyricLine& other) const noexcept

@@ -57,12 +57,6 @@ std::vector<LyricsService::LyricLine> LyricsService::parseLrcFile(const QString&
     return lyrics;
 }
 
-bool LyricsService::hasLyricsFile(const QString& audioFilePath)
-{
-    QString lrcFilePath = findLrcFile(audioFilePath);
-    return !lrcFilePath.isEmpty();
-}
-
 QString LyricsService::findLrcFile(const QString& audioFilePath)
 {
     QFileInfo audioInfo(audioFilePath);
