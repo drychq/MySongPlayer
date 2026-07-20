@@ -11,7 +11,7 @@ class IPlaylistOperations
 {
 public:
     virtual ~IPlaylistOperations() = default;
-    virtual void addAudio(const QString& title,
+    virtual bool addAudio(const QString& title,
                           const QString& authorName,
                           const QUrl& audioSource,
                           const QUrl& imageSource,

@@ -37,7 +37,7 @@ Rectangle {
       property string audioAuthorName: root.searchMode === "network" ? (model.audioAuthor || "") : (model.audioAuthorName || "")
       property url audioImageSource: model.audioImageSource || ""
       property url audioSource: model.audioSource || ""
-      property int originalIndex: root.searchMode === "local" ? (model.originalIndex || -1) : -1
+      property int originalIndex: root.searchMode === "local" ? model.originalIndex : -1
 
       width: listView.width
       height: AppStyles.listItemHeight

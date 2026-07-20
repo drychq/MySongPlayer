@@ -15,9 +15,8 @@ class PlaylistCoordinator : public QObject, public ICurrentSongManager, public I
     Q_OBJECT
 
 public:
-    explicit PlaylistCoordinator(PlaylistModel *playlistModel, QObject *parent = nullptr);
     explicit PlaylistCoordinator(PlaylistModel *playlistModel, PlaylistStorageService *storageService, QObject *parent = nullptr);
-    virtual ~PlaylistCoordinator() = default;
+    ~PlaylistCoordinator() override = default;
 
     AudioInfo* currentSong() const override;
     void setCurrentSong(AudioInfo *newCurrentSong) override;
@@ -27,7 +26,7 @@ public:
     void switchToAudioByIndex(int index) override;
     void handlePlayFinished() override;
 
-    void addAudio(const QString& title,
+    bool addAudio(const QString& title,
                   const QString& authorName,
                   const QUrl& audioSource,
                   const QUrl& imageSource,
@@ -59,12 +58,11 @@ signals:
 
 private slots:
     void onCurrentSongChanged();
-    void onRequestAudioSourceChange(const QUrl &source);
     void onPlayFinished();
-    void onRowsInserted(const QModelIndex &parent, int first, int last);
 
 private:
-    PlaylistModel *m_playlistModel;
-    PlaylistStorageService *m_storageService;
-    QString m_currentPlaylistName;
+    PlaylistModel *m_playlistModel{nullptr};
+    PlaylistStorageService *m_storageService{nullptr};
+    QString m_currentPlaylistName{};
+    bool m_loadingPlaylist{false};
 };

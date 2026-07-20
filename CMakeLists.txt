@@ -389,6 +389,15 @@ if(BUILD_TESTING)
     add_test(NAME MySongPlayerAudioImportTests COMMAND MySongPlayerAudioImportTests)
     set_tests_properties(MySongPlayerAudioImportTests PROPERTIES TIMEOUT 10)
 
+    add_executable(MySongPlayerModelTests
+        tests/integration/PlaylistModelTest.cpp
+    )
+    target_link_libraries(MySongPlayerModelTests PRIVATE ${APP_CORE_TARGET})
+    target_compile_features(MySongPlayerModelTests PRIVATE cxx_std_23)
+    mysongplayer_enable_warnings(MySongPlayerModelTests)
+    add_test(NAME MySongPlayerModelTests COMMAND MySongPlayerModelTests)
+    set_tests_properties(MySongPlayerModelTests PROPERTIES TIMEOUT 10)
+
     add_test(
         NAME MySongPlayerQmlLint
         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all_qmllint

@@ -7,6 +7,12 @@
 
 #include <cstddef>
 #include <optional>
+#include <vector>
+
+using std::nullopt;
+using std::optional;
+using std::size_t;
+using std::vector;
 
 namespace {
 
@@ -15,44 +21,37 @@ QString defaultPlaylistName()
     return SongPlayer::QtAdapter::fromUtf8String(SongPlayer::Core::kDefaultPlaylistName);
 }
 
-std::optional<std::size_t> randomShuffleIndex(const PlaylistModel& playlistModel)
+optional<size_t> randomShuffleIndex(const PlaylistModel &playlistModel)
 {
     if (playlistModel.playMode() != PlayMode::Shuffle || playlistModel.rowCount() <= 0) {
-        return std::nullopt;
+        return nullopt;
     }
 
-    return static_cast<std::size_t>(QRandomGenerator::global()->bounded(playlistModel.rowCount()));
+    return static_cast<size_t>(QRandomGenerator::global()->bounded(playlistModel.rowCount()));
+}
+
+bool addCoreTrack(PlaylistModel &playlistModel, const SongPlayer::Core::AudioTrack &track)
+{
+    return playlistModel.addAudio(
+        SongPlayer::QtAdapter::fromUtf8String(track.title),
+        SongPlayer::QtAdapter::fromUtf8String(track.authorName),
+        QUrl{SongPlayer::QtAdapter::fromUtf8String(track.audioSource)},
+        QUrl{SongPlayer::QtAdapter::fromUtf8String(track.imageSource)},
+        QUrl{SongPlayer::QtAdapter::fromUtf8String(track.videoSource)});
 }
 
 } // namespace
 
-PlaylistCoordinator::PlaylistCoordinator(PlaylistModel *playlistModel, QObject *parent)
-    : QObject(parent)
-    , m_playlistModel(playlistModel)
-    , m_storageService(nullptr) // This constructor is for scenarios where playlist persistence is not required.
-    , m_currentPlaylistName(defaultPlaylistName())
-{
-    // Connect signals from the playlist model to handle changes in the current song or playlist structure.
-    // These connections are fundamental for updating the UI and managing playback flow.
-    connect(m_playlistModel, &PlaylistModel::currentSongChanged,
-            this, &PlaylistCoordinator::onCurrentSongChanged);
-    connect(m_playlistModel, &PlaylistModel::rowsInserted,
-            this, &PlaylistCoordinator::onRowsInserted);
-}
-
 PlaylistCoordinator::PlaylistCoordinator(PlaylistModel *playlistModel, PlaylistStorageService *storageService, QObject *parent)
-    : QObject(parent)
-    , m_playlistModel(playlistModel)
-    , m_storageService(storageService)
-    , m_currentPlaylistName(defaultPlaylistName())
+    : QObject{parent}
+    , m_playlistModel{playlistModel}
+    , m_storageService{storageService}
+    , m_currentPlaylistName{defaultPlaylistName()}
 {
     // Connect signals from the playlist model to handle changes in the current song or playlist structure.
     // These connections are fundamental for updating the UI and managing playback flow.
     connect(m_playlistModel, &PlaylistModel::currentSongChanged,
             this, &PlaylistCoordinator::onCurrentSongChanged);
-    connect(m_playlistModel, &PlaylistModel::rowsInserted,
-            this, &PlaylistCoordinator::onRowsInserted);
-
     if (m_storageService) {
         // Connect signals from the storage service to react to playlist save, delete, and rename events.
         // This ensures that the coordinator's internal state and UI are synchronized with persistent storage changes.
@@ -88,17 +87,14 @@ void PlaylistCoordinator::switchToNextSong()
         return;
     }
 
-    const std::optional<std::size_t> nextIndex = m_playlistModel->nextSongIndex(
-        randomShuffleIndex(*m_playlistModel));
+    const optional<size_t> nextIndex{m_playlistModel->nextSongIndex(
+        randomShuffleIndex(*m_playlistModel))};
     if (!nextIndex) {
         return;
     }
 
-    AudioInfo* nextSong = m_playlistModel->getAudioInfoAtIndex(static_cast<int>(*nextIndex));
+    AudioInfo *nextSong{m_playlistModel->getAudioInfoAtIndex(static_cast<int>(*nextIndex))};
     m_playlistModel->setCurrentSong(nextSong);
-    if (nextSong) {
-        emit requestAudioSourceChange(nextSong->audioSource());
-    }
 }
 
 
@@ -108,37 +104,31 @@ void PlaylistCoordinator::switchToPreviousSong()
         return;
     }
 
-    const std::optional<std::size_t> previousIndex = m_playlistModel->previousSongIndex(
-        randomShuffleIndex(*m_playlistModel));
+    const optional<size_t> previousIndex{m_playlistModel->previousSongIndex(
+        randomShuffleIndex(*m_playlistModel))};
     if (!previousIndex) {
         return;
     }
 
-    AudioInfo* previousSong = m_playlistModel->getAudioInfoAtIndex(static_cast<int>(*previousIndex));
+    AudioInfo *previousSong{m_playlistModel->getAudioInfoAtIndex(static_cast<int>(*previousIndex))};
     m_playlistModel->setCurrentSong(previousSong);
-    if (previousSong) {
-        emit requestAudioSourceChange(previousSong->audioSource());
-    }
 }
 
 void PlaylistCoordinator::switchToAudioByIndex(int index)
 {
-    if (m_playlistModel && index >= 0 && index < m_playlistModel->rowCount()) {
-        AudioInfo* targetSong = m_playlistModel->getAudioInfoAtIndex(index);
-        m_playlistModel->setCurrentSong(targetSong);
-        if (targetSong) {
-            emit requestAudioSourceChange(targetSong->audioSource());
-        }
+    if (!m_playlistModel || index < 0 || index >= m_playlistModel->rowCount()) {
+        return;
     }
+    m_playlistModel->setCurrentSong(m_playlistModel->getAudioInfoAtIndex(index));
 }
 
-void PlaylistCoordinator::addAudio(const QString& title,
+bool PlaylistCoordinator::addAudio(const QString& title,
                                    const QString& authorName,
                                    const QUrl& audioSource,
                                    const QUrl& imageSource,
                                    const QUrl& videoSource)
 {
-    m_playlistModel->addAudio(title, authorName, audioSource, imageSource, videoSource);
+    return m_playlistModel->addAudio(title, authorName, audioSource, imageSource, videoSource);
 }
 
 void PlaylistCoordinator::removeAudio(int index)
@@ -157,13 +147,15 @@ PlaylistModel* PlaylistCoordinator::playlistModel() const
 
 QList<QObject*> PlaylistCoordinator::getPlaylistAudioInfoList() const
 {
-    QList<QObject*> audioInfoList;
-    if (m_playlistModel) {
-        for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
-            AudioInfo* audioInfo = m_playlistModel->getAudioInfoAtIndex(i);
-            if (audioInfo) {
-                audioInfoList.append(audioInfo);
-            }
+    if (!m_playlistModel) {
+        return {};
+    }
+
+    QList<QObject*> audioInfoList{};
+    for (int i{0}; i < m_playlistModel->rowCount(); ++i) {
+        AudioInfo *audioInfo{m_playlistModel->getAudioInfoAtIndex(i)};
+        if (audioInfo) {
+            audioInfoList.append(audioInfo);
         }
     }
     return audioInfoList;
@@ -180,26 +172,31 @@ bool PlaylistCoordinator::saveCurrentPlaylist(const QString &playlistName)
 
     // Determine the target playlist name. If an explicit name is provided, use it;
     // otherwise, default to the currently active playlist name.
-    QString targetPlaylistName = playlistName.isEmpty() ? m_currentPlaylistName : playlistName;
+    const QString targetPlaylistName{playlistName.isEmpty() ? m_currentPlaylistName : playlistName};
 
     // Collect all AudioInfo objects from the current playlist model.
     // This prepares the data for serialization and storage.
-    QList<AudioInfo*> audioItems;
+    vector<SongPlayer::Core::AudioTrack> audioItems;
+    audioItems.reserve(static_cast<size_t>(m_playlistModel->rowCount()));
     for (int i = 0; i < m_playlistModel->rowCount(); ++i) {
-        AudioInfo* audioInfo = m_playlistModel->getAudioInfoAtIndex(i);
-        if (audioInfo) {
-            audioItems.append(audioInfo);
+        AudioInfo *audioInfo{m_playlistModel->getAudioInfoAtIndex(i)};
+        if (!audioInfo) {
+            continue;
         }
+        audioItems.push_back(SongPlayer::QtAdapter::makeCoreTrack(
+            audioInfo->title(), audioInfo->authorName(), audioInfo->audioSource(),
+            audioInfo->imageSource(), audioInfo->videoSource()));
     }
 
     // Determine the current playback mode and the index of the currently playing song.
     // This metadata is saved along with the playlist to restore the exact playback state.
-    PlayMode playMode = m_playlistModel->playMode();
-    const int currentIndex = m_playlistModel->currentSongIndex();
+    const PlayMode playMode{m_playlistModel->playMode()};
+    const optional<size_t> currentIndex{m_playlistModel->currentIndex()};
 
     // Delegate the actual saving operation to the PlaylistStorageService.
     // This decouples the playlist management logic from the persistence mechanism.
-    bool success = m_storageService->savePlaylist(targetPlaylistName, audioItems, playMode, currentIndex);
+    const bool success{m_storageService->savePlaylist(
+        targetPlaylistName, audioItems, playMode, currentIndex)};
     if (success && playlistName.isEmpty()) {
         // If the playlist was saved successfully using the default name, update the internal
         // current playlist name to reflect this, ensuring consistency.
@@ -220,24 +217,21 @@ bool PlaylistCoordinator::loadPlaylist(const QString &playlistName)
 
     // Attempt to load the playlist data from the storage service.
     // If the playlist does not exist or is empty, log a warning and return false.
-    PlaylistInfo playlistInfo = m_storageService->loadPlaylist(playlistName);
-    if (playlistInfo.id == -1 || playlistInfo.audioItems.isEmpty()) {
-        qWarning() << "Playlist does not exist or is empty:" << playlistName;
+    const PlaylistInfo playlistInfo{m_storageService->loadPlaylist(playlistName)};
+    if (playlistInfo.id == -1) {
+        qWarning() << "Playlist does not exist:" << playlistName;
         return false;
     }
 
     // Clear the current playlist model before loading new items.
     // This ensures that the UI reflects the newly loaded playlist accurately.
+    m_loadingPlaylist = true;
     m_playlistModel->clearPlaylist();
 
     // Add each audio item from the loaded playlist data to the playlist model.
     // This populates the UI with the songs from the loaded playlist.
-    for (AudioInfo* audioInfo : std::as_const(playlistInfo.audioItems)) {
-        if (audioInfo) {
-            m_playlistModel->addAudio(audioInfo->title(), audioInfo->authorName(),
-                                      audioInfo->audioSource(), audioInfo->imageSource(),
-                                      audioInfo->videoSource());
-        }
+    for (const SongPlayer::Core::AudioTrack &track : playlistInfo.audioItems) {
+        addCoreTrack(*m_playlistModel, track);
     }
 
     // Restore the saved play mode to ensure consistent playback behavior.
@@ -245,15 +239,15 @@ bool PlaylistCoordinator::loadPlaylist(const QString &playlistName)
 
     // Restore the currently playing song and its audio source.
     // This allows the application to resume playback from where it left off in the loaded playlist.
-    if (playlistInfo.currentIndex >= 0 && playlistInfo.currentIndex < m_playlistModel->rowCount()) {
-        AudioInfo* currentSong = m_playlistModel->getAudioInfoAtIndex(playlistInfo.currentIndex);
-        m_playlistModel->setCurrentSong(currentSong);
-
-        if (currentSong && !currentSong->audioSource().isEmpty()) {
-            qDebug() << "PlaylistCoordinator: Set audio source when restoring playlist:" << currentSong->title();
-            emit requestAudioSourceChange(currentSong->audioSource());
-        }
+    if (playlistInfo.currentIndex
+        && *playlistInfo.currentIndex < static_cast<size_t>(m_playlistModel->rowCount())) {
+        m_playlistModel->setCurrentSong(
+            m_playlistModel->getAudioInfoAtIndex(static_cast<int>(*playlistInfo.currentIndex)));
+    } else {
+        m_playlistModel->setCurrentSong(nullptr);
     }
+    m_loadingPlaylist = false;
+    onCurrentSongChanged();
 
     // Update the internal current playlist name and emit signals to notify other components.
     m_currentPlaylistName = playlistName;
@@ -282,7 +276,7 @@ bool PlaylistCoordinator::deletePlaylist(const QString &playlistName)
         return false;
     }
 
-    bool success = m_storageService->deletePlaylist(playlistName);
+    const bool success{m_storageService->deletePlaylist(playlistName)};
     if (success) {
         // If the currently active playlist is deleted, switch back to the default playlist.
         // This prevents the application from being in an inconsistent state with a non-existent active playlist.
@@ -312,17 +306,15 @@ void PlaylistCoordinator::handlePlayFinished()
 
 void PlaylistCoordinator::onCurrentSongChanged()
 {
+    if (m_loadingPlaylist) {
+        return;
+    }
     emit currentSongChanged();
 
-    AudioInfo* currentSong = m_playlistModel->currentSong();
+    AudioInfo *currentSong{m_playlistModel->currentSong()};
     if (currentSong && !currentSong->audioSource().isEmpty()) {
         emit requestAudioSourceChange(currentSong->audioSource());
     }
-}
-
-void PlaylistCoordinator::onRequestAudioSourceChange(const QUrl &source)
-{
-    emit requestAudioSourceChange(source);
 }
 
 void PlaylistCoordinator::onPlayFinished()
@@ -333,7 +325,7 @@ void PlaylistCoordinator::onPlayFinished()
         return;
     }
 
-    PlayMode playMode = m_playlistModel->playMode();
+    const PlayMode playMode{m_playlistModel->playMode()};
     switch (playMode) {
 
     case PlayMode::RepeatOne:
@@ -364,18 +356,4 @@ QString PlaylistCoordinator::currentPlaylistName() const
 PlaylistStorageService *PlaylistCoordinator::storageService() const
 {
     return m_storageService;
-}
-
-
-void PlaylistCoordinator::onRowsInserted(const QModelIndex &parent, int first, int last)
-{
-    Q_UNUSED(parent);
-    Q_UNUSED(last);
-
-    if (first == 0 && m_playlistModel && m_playlistModel->rowCount() == 1) {
-        AudioInfo* currentSong = m_playlistModel->currentSong();
-        if (currentSong && !currentSong->audioSource().isEmpty()) {
-            emit requestAudioSourceChange(currentSong->audioSource());
-        }
-    }
 }

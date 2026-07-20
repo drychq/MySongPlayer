@@ -14,7 +14,7 @@ namespace SongPlayer::Core {
 inline constexpr std::string_view kDefaultPlaylistName = "Default Playlist";
 
 struct PlaylistSearchResult {
-    std::size_t originalIndex = 0;
+    std::size_t originalIndex{0};
 };
 
 enum class PlaylistNameValidationError {
@@ -50,7 +50,7 @@ public:
 
 private:
     std::vector<AudioTrack> m_tracks;
-    PlayMode m_playMode = PlayMode::Loop;
+    PlayMode m_playMode{PlayMode::Loop};
     std::optional<std::size_t> m_currentIndex;
 };
 
@@ -63,10 +63,5 @@ private:
 [[nodiscard]] PlaylistNameValidationError validatePlaylistName(
     std::u16string_view name,
     std::size_t maxLength = 100) noexcept;
-
-[[nodiscard]] std::optional<std::size_t> playlistCurrentIndexAfterRemoval(
-    std::size_t itemCount,
-    std::optional<std::size_t> currentIndex,
-    std::size_t removedIndex) noexcept;
 
 } // namespace SongPlayer::Core

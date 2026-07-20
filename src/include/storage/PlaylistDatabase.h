@@ -11,6 +11,8 @@
 #include <QStandardPaths>
 #include <QDir>
 
+#include <functional>
+
 namespace SongPlayer {
 
 class PlaylistDatabase : public QObject
@@ -19,14 +21,11 @@ class PlaylistDatabase : public QObject
 
 public:
     explicit PlaylistDatabase(QObject *parent = nullptr);
-    virtual ~PlaylistDatabase();
+    ~PlaylistDatabase() override;
 
     bool initializeDatabase();
     void closeDatabase();
-    bool isConnected() const;
-
     bool createTables();
-    bool checkTableExists(const QString &tableName);
 
     QSqlQuery executeQuery(const QString &queryString, const QVariantList &values = QVariantList());
     bool executeNonQuery(const QString &queryString, const QVariantList &values = QVariantList());
@@ -35,6 +34,7 @@ public:
     bool beginTransaction();
     bool commitTransaction();
     bool rollbackTransaction();
+    bool runInTransaction(const std::function<bool()>& operation);
 
 
     QString lastError() const;
@@ -44,11 +44,11 @@ signals:
     void databaseError(const QString &error);
 
 private:
-    static constexpr const char* DATABASE_CONNECTION_NAME = "playlist_connection";
+    static constexpr const char *DATABASE_CONNECTION_NAME{"playlist_connection"};
 
-    QSqlDatabase m_database;
-    QString m_databasePath;
-    QString m_lastError;
+    QSqlDatabase m_database{};
+    QString m_databasePath{};
+    QString m_lastError{};
 
     QString getDatabasePath();
     bool createPlaylistsTable();

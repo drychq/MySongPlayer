@@ -23,18 +23,16 @@ public:
     Q_ENUM(Role)
 
     explicit PlaylistSearchModel(QObject *parent = nullptr);
-    virtual ~PlaylistSearchModel();
+    ~PlaylistSearchModel() override = default;
 
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    virtual QVariant data(const QModelIndex &index, int role) const override;
-    virtual QHash<int, QByteArray> roleNames() const override;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
+    QHash<int, QByteArray> roleNames() const override;
 
     bool isSearching() const;
     void setIsSearching(bool newIsSearching);
 
 public slots:
-    void searchInPlaylist(const QString &searchText);
-
     void clearSearch();
 
     void performSearch(const QVariantList &audioInfoList, const QString &searchText);
@@ -44,14 +42,14 @@ signals:
 
 private:
     struct SearchResult {
-        AudioInfo* audioInfo;
-        int originalIndex;
+        AudioInfo *audioInfo{nullptr};
+        int originalIndex{-1};
 
-        SearchResult() : audioInfo(nullptr), originalIndex(-1) {}
-        SearchResult(AudioInfo* info, int index) : audioInfo(info), originalIndex(index) {}
+        SearchResult() = default;
+        SearchResult(AudioInfo *info, int index) : audioInfo{info}, originalIndex{index} {}
     };
 
-    QList<SearchResult> m_searchResults;
-    bool m_isSearching;
-    QString m_currentSearchText;
+    QList<SearchResult> m_searchResults{};
+    bool m_isSearching{false};
+    QString m_currentSearchText{};
 };

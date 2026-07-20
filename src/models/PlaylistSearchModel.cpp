@@ -2,21 +2,34 @@
 #include "adapters/QtAudioTrackAdapter.h"
 #include "core/Playlist.h"
 
+#include <limits>
 #include <utility>
 #include <vector>
 
-PlaylistSearchModel::PlaylistSearchModel(QObject *parent)
-    : QAbstractListModel(parent)
-    , m_isSearching(false)
-{}
+using std::numeric_limits;
+using std::in_range;
+using std::size_t;
+using std::vector;
 
-PlaylistSearchModel::~PlaylistSearchModel()
+namespace {
+
+int boundedRowCount(qsizetype count)
+{
+    const qsizetype maximum{numeric_limits<int>::max()};
+    return static_cast<int>(qMin(count, maximum));
+}
+
+} // namespace
+
+PlaylistSearchModel::PlaylistSearchModel(QObject *parent)
+    : QAbstractListModel{parent}
+    , m_isSearching{false}
 {}
 
 int PlaylistSearchModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return m_searchResults.size();
+    return boundedRowCount(m_searchResults.size());
 }
 
 QVariant PlaylistSearchModel::data(const QModelIndex &index, int role) const
@@ -25,8 +38,8 @@ QVariant PlaylistSearchModel::data(const QModelIndex &index, int role) const
         return {};
     }
 
-    const SearchResult &result = m_searchResults[index.row()];
-    AudioInfo *audioInfo = result.audioInfo;
+    const SearchResult &result{m_searchResults[index.row()]};
+    AudioInfo *audioInfo{result.audioInfo};
 
     if (!audioInfo) {
         return {};
@@ -50,7 +63,7 @@ QVariant PlaylistSearchModel::data(const QModelIndex &index, int role) const
 
 QHash<int, QByteArray> PlaylistSearchModel::roleNames() const
 {
-    QHash<int, QByteArray> names;
+    QHash<int, QByteArray> names{};
     names[AudioTitleRole] = "audioTitle";
     names[AudioAuthorNameRole] = "audioAuthorName";
     names[AudioImageSourceRole] = "audioImageSource";
@@ -73,14 +86,14 @@ void PlaylistSearchModel::setIsSearching(bool newIsSearching)
     emit isSearchingChanged();
 }
 
-void PlaylistSearchModel::searchInPlaylist(const QString &searchText)
-{
-    m_currentSearchText = searchText.trimmed();
-}
-
 void PlaylistSearchModel::performSearch(const QVariantList &audioInfoList, const QString &searchText)
 {
     if (audioInfoList.isEmpty() || searchText.isEmpty()) {
+        clearSearch();
+        return;
+    }
+    if (!in_range<int>(audioInfoList.size())) {
+        qWarning() << "Search input exceeds the model row limit";
         clearSearch();
         return;
     }
@@ -97,43 +110,43 @@ void PlaylistSearchModel::performSearch(const QVariantList &audioInfoList, const
         return;
     }
 
-    std::vector<SongPlayer::Core::AudioTrack> tracks;
-    std::vector<AudioInfo*> audioInfos;
-    std::vector<int> originalIndexes;
-    tracks.reserve(static_cast<std::size_t>(audioInfoList.size()));
-    audioInfos.reserve(static_cast<std::size_t>(audioInfoList.size()));
-    originalIndexes.reserve(static_cast<std::size_t>(audioInfoList.size()));
+    vector<SongPlayer::Core::AudioTrack> tracks{};
+    vector<AudioInfo *> audioInfos{};
+    vector<int> originalIndexes{};
+    tracks.reserve(static_cast<size_t>(audioInfoList.size()));
+    audioInfos.reserve(static_cast<size_t>(audioInfoList.size()));
+    originalIndexes.reserve(static_cast<size_t>(audioInfoList.size()));
 
     for (int i = 0; i < audioInfoList.size(); ++i) {
-        QObject* obj = qvariant_cast<QObject*>(audioInfoList[i]);
+        QObject *obj{qvariant_cast<QObject *>(audioInfoList[i])};
         if (!obj || !obj->inherits(AudioInfo::staticMetaObject.className())) {
             continue;
         }
 
-        auto* audioInfo = static_cast<AudioInfo*>(obj);
-        SongPlayer::Core::AudioTrack track = SongPlayer::QtAdapter::makeCoreTrack(
+        auto *audioInfo{static_cast<AudioInfo *>(obj)};
+        SongPlayer::Core::AudioTrack track{SongPlayer::QtAdapter::makeCoreTrack(
             audioInfo->title(),
             audioInfo->authorName(),
             audioInfo->audioSource(),
             audioInfo->imageSource(),
-            audioInfo->videoSource());
+            audioInfo->videoSource())};
         track.songIndex = audioInfo->songIndex();
         tracks.push_back(std::move(track));
         audioInfos.push_back(audioInfo);
         originalIndexes.push_back(i);
     }
 
-    const auto results = SongPlayer::Core::searchTracks(
+    const auto results{SongPlayer::Core::searchTracks(
         tracks,
-        SongPlayer::QtAdapter::toUtf8String(m_currentSearchText));
+        SongPlayer::QtAdapter::toUtf8String(m_currentSearchText))};
 
     for (const SongPlayer::Core::PlaylistSearchResult& result : results) {
-        const std::size_t trackIndex = result.originalIndex;
+        const size_t trackIndex{result.originalIndex};
         if (trackIndex >= audioInfos.size()) {
             continue;
         }
 
-        m_searchResults.append(SearchResult(audioInfos[trackIndex], originalIndexes[trackIndex]));
+        m_searchResults.append(SearchResult{audioInfos[trackIndex], originalIndexes[trackIndex]});
     }
 
     endResetModel();

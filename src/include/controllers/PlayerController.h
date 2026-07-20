@@ -73,7 +73,7 @@ public:
     Q_INVOKABLE void switchToPreviousSong();
     Q_INVOKABLE void switchToAudioByIndex(int index);
 
-    Q_INVOKABLE void addAudio(const QString &title,
+    Q_INVOKABLE bool addAudio(const QString &title,
                               const QString &authorName,
                               const QUrl &audioSource,
                               const QUrl &imageSource,
@@ -128,16 +128,16 @@ private slots:
 private:
     void loadDefaultPlaylistOnStartup();
 
-    AudioPlayer *m_audioPlayer = nullptr;
-    PlaylistModel *m_playlistModel = nullptr;
-    SongPlayer::AudioImporter *m_audioImporter = nullptr;
-    LyricsService *m_lyricsService = nullptr;
-    LyricsModel *m_lyricsModel = nullptr;
-    PlaylistStorageService *m_playlistStorageService = nullptr;
-    QTimer *m_saveTimer = nullptr;
+    AudioPlayer *m_audioPlayer{nullptr};
+    PlaylistModel *m_playlistModel{nullptr};
+    SongPlayer::AudioImporter *m_audioImporter{nullptr};
+    LyricsService *m_lyricsService{nullptr};
+    LyricsModel *m_lyricsModel{nullptr};
+    PlaylistStorageService *m_playlistStorageService{nullptr};
+    QTimer *m_saveTimer{nullptr};
 
-    ICurrentSongManager *m_currentSongManager = nullptr;
-    IPlaylistOperations *m_playlistOperations = nullptr;
-    IPlaylistPersistence *m_playlistPersistence = nullptr;
-    bool m_playlistDirtyDuringImport = false;
+    ICurrentSongManager *m_currentSongManager{nullptr};
+    IPlaylistOperations *m_playlistOperations{nullptr};
+    IPlaylistPersistence *m_playlistPersistence{nullptr};
+    bool m_playlistDirtyDuringImport{false};
 };

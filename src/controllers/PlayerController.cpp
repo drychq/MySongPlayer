@@ -12,6 +12,21 @@
 
 #include <utility>
 
+namespace {
+
+bool isValidPlayMode(int value) noexcept
+{
+    switch (static_cast<PlayMode>(value)) {
+    case PlayMode::Loop:
+    case PlayMode::Shuffle:
+    case PlayMode::RepeatOne:
+        return true;
+    }
+    return false;
+}
+
+} // namespace
+
 PlayerController::PlayerController(QObject *parent)
     : QObject{parent}
     , m_audioPlayer{new AudioPlayer(this)}
@@ -19,14 +34,14 @@ PlayerController::PlayerController(QObject *parent)
     , m_audioImporter{new SongPlayer::AudioImporter(this)}
     , m_lyricsService{new LyricsService(this)}
     , m_lyricsModel{new LyricsModel(this)}
-    , m_playlistStorageService(new PlaylistStorageService(this))
-    , m_saveTimer(new QTimer(this))
+    , m_playlistStorageService{new PlaylistStorageService{this}}
+    , m_saveTimer{new QTimer{this}}
 {
     if (!m_playlistStorageService->initialize()) {
         qCritical() << "Playlist storage service initialization failed:" << m_playlistStorageService->lastError();
     }
 
-    auto* playlistCoordinator = new PlaylistCoordinator(m_playlistModel, m_playlistStorageService, this);
+    auto *playlistCoordinator{new PlaylistCoordinator{m_playlistModel, m_playlistStorageService, this}};
     /* To centralize playlist management logic and decouple it from the PlayerController,
      * the PlaylistCoordinator implements various interfaces (ICurrentSongManager, IPlaylistOperations, IPlaylistPersistence).
      * This design promotes modularity and testability by allowing the PlayerController to interact
@@ -95,9 +110,9 @@ PlayerController::PlayerController(QObject *parent)
     m_saveTimer->setSingleShot(true);
     m_saveTimer->setInterval(2000);
     connect(m_saveTimer, &QTimer::timeout, this, [this]() {
-        const QString playlistName = SongPlayer::QtAdapter::fromUtf8String(
-            SongPlayer::Core::kDefaultPlaylistName);
-        const bool success = m_playlistPersistence->saveCurrentPlaylist(playlistName);
+        const QString playlistName{SongPlayer::QtAdapter::fromUtf8String(
+            SongPlayer::Core::kDefaultPlaylistName)};
+        const bool success{m_playlistPersistence->saveCurrentPlaylist(playlistName)};
         if (success) {
             qDebug() << "PlayerController: Playlist auto-save successful";
         } else {
@@ -181,6 +196,9 @@ int PlayerController::playModeInt() const
 
 void PlayerController::setPlayModeInt(int newMode)
 {
+    if (!isValidPlayMode(newMode)) {
+        return;
+    }
     m_playlistModel->setPlayMode(static_cast<PlayMode>(newMode));
 }
 
@@ -200,11 +218,11 @@ void PlayerController::switchToAudioByIndex(int index)
     m_currentSongManager->switchToAudioByIndex(index);
 }
 
-void PlayerController::addAudio(const QString &title, const QString &authorName,
+bool PlayerController::addAudio(const QString &title, const QString &authorName,
                                 const QUrl &audioSource, const QUrl &imageSource,
                                 const QUrl &videoSource)
 {
-    m_playlistOperations->addAudio(title, authorName, audioSource, imageSource, videoSource);
+    return m_playlistOperations->addAudio(title, authorName, audioSource, imageSource, videoSource);
 }
 
 void PlayerController::removeAudio(int index)
@@ -274,8 +292,10 @@ void PlayerController::cancelAudioImport()
 void PlayerController::addNetworkAudio(const QString &title, const QString &authorName,
                                        const QUrl &audioSource, const QUrl &imageSource)
 {
-    m_playlistOperations->addAudio(title, authorName, audioSource, imageSource);
-    int lastIndex = m_playlistModel->rowCount() - 1;
+    if (!m_playlistOperations->addAudio(title, authorName, audioSource, imageSource)) {
+        return;
+    }
+    const int lastIndex{m_playlistModel->rowCount() - 1};
     switchToAudioByIndex(lastIndex);
     qDebug() << "PlayerController: Added network audio to playlist:" << title << "by" << authorName;
 }
@@ -311,11 +331,11 @@ void PlayerController::onCurrentSongChanged()
 
     // If a song is selected, attempt to load and display its lyrics.
     // Lyrics are parsed from the audio file's local path, if available.
-    AudioInfo* currentSong = m_currentSongManager->currentSong();
+    AudioInfo *currentSong{m_currentSongManager->currentSong()};
     if (currentSong) {
-        QString audioFilePath = currentSong->audioSource().toLocalFile();
+        const QString audioFilePath{currentSong->audioSource().toLocalFile()};
         if (!audioFilePath.isEmpty()) {
-            auto lyrics = m_lyricsService->parseLrcFile(audioFilePath);
+            auto lyrics{m_lyricsService->parseLrcFile(audioFilePath)};
             m_lyricsModel->setLyrics(std::move(lyrics));
         } else {
             // Clear lyrics if the audio source is not a local file (e.g., network stream) or path is empty.
@@ -329,7 +349,7 @@ void PlayerController::onCurrentSongChanged()
 
 void PlayerController::onPositionChanged()
 {
-    qint64 currentPosition = m_audioPlayer->position();
+    const qint64 currentPosition{m_audioPlayer->position()};
     m_lyricsModel->updatePosition(currentPosition);
 }
 
@@ -383,9 +403,9 @@ void PlayerController::loadDefaultPlaylistOnStartup()
     // that might occur if playlist loading (which involves file I/O) happens too early
     // in the application startup sequence.
     QTimer::singleShot(100, this, [this]() {
-        const QString playlistName = SongPlayer::QtAdapter::fromUtf8String(
-            SongPlayer::Core::kDefaultPlaylistName);
-        const bool success = m_playlistPersistence->loadPlaylist(playlistName);
+        const QString playlistName{SongPlayer::QtAdapter::fromUtf8String(
+            SongPlayer::Core::kDefaultPlaylistName)};
+        const bool success{m_playlistPersistence->loadPlaylist(playlistName)};
         if (success) {
             qInfo() << "Default playlist loaded successfully";
         } else {

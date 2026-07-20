@@ -1,5 +1,10 @@
 #include "storage/PlaylistDatabase.h"
 
+#include <QScopeGuard>
+
+using std::exception;
+using std::function;
+
 namespace SongPlayer {
 
 PlaylistDatabase::PlaylistDatabase(QObject *parent)
@@ -44,7 +49,7 @@ bool PlaylistDatabase::initializeDatabase()
 
         return true;
 
-    } catch (const std::exception &e) {
+    } catch (const exception& e) {
         // Catch any unexpected exceptions during initialization to prevent crashes
         // and provide a robust error handling mechanism.
         m_lastError = QString("Database initialization exception: %1").arg(e.what());
@@ -59,17 +64,12 @@ void PlaylistDatabase::closeDatabase()
         m_database.close();
     }
 
-    const QString connectionName = QString::fromLatin1(DATABASE_CONNECTION_NAME);
+    const QString connectionName{QString::fromLatin1(DATABASE_CONNECTION_NAME)};
     m_database = {};
 
     if (QSqlDatabase::contains(connectionName)) {
         QSqlDatabase::removeDatabase(connectionName);
     }
-}
-
-bool PlaylistDatabase::isConnected() const
-{
-    return m_database.isOpen() && m_database.isValid();
 }
 
 bool PlaylistDatabase::createTables()
@@ -105,7 +105,7 @@ bool PlaylistDatabase::createTables()
         // Commit the transaction only if all table and index creations were successful.
         return commitTransaction();
 
-    } catch (const std::exception &e) {
+    } catch (const exception& e) {
         // Rollback the transaction if any exception occurs during table creation,
         // ensuring data integrity and preventing partial table structures.
         rollbackTransaction();
@@ -113,20 +113,6 @@ bool PlaylistDatabase::createTables()
         qCritical() << m_lastError;
         return false;
     }
-}
-
-bool PlaylistDatabase::checkTableExists(const QString &tableName)
-{
-    QSqlQuery query(m_database);
-    query.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?");
-    query.addBindValue(tableName);
-
-    if (!query.exec()) {
-        logError("Check if table exists", query.lastError());
-        return false;
-    }
-
-    return query.next();
 }
 
 QSqlQuery PlaylistDatabase::executeQuery(const QString &queryString, const QVariantList &values)
@@ -147,7 +133,7 @@ QSqlQuery PlaylistDatabase::executeQuery(const QString &queryString, const QVari
 
 bool PlaylistDatabase::executeNonQuery(const QString &queryString, const QVariantList &values)
 {
-    QSqlQuery query = executeQuery(queryString, values);
+    QSqlQuery query{executeQuery(queryString, values)};
     return !query.lastError().isValid();
 }
 
@@ -178,6 +164,24 @@ bool PlaylistDatabase::rollbackTransaction()
     return true;
 }
 
+bool PlaylistDatabase::runInTransaction(const function<bool()>& operation)
+{
+    if (!beginTransaction()) {
+        return false;
+    }
+
+    auto rollbackGuard{qScopeGuard([this]() noexcept {
+        rollbackTransaction();
+    })};
+
+    if (!operation() || !commitTransaction()) {
+        return false;
+    }
+
+    rollbackGuard.dismiss();
+    return true;
+}
+
 QString PlaylistDatabase::lastError() const
 {
     return m_lastError;
@@ -197,7 +201,7 @@ QString PlaylistDatabase::getDatabasePath()
 {
     // Determine the standard writable location for application data.
     // This ensures that the database file is stored in a user-appropriate and system-compliant location.
-    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString appDataPath{QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)};
     QDir appDir(appDataPath);
 
     if (!appDir.exists()) {
@@ -219,7 +223,7 @@ bool PlaylistDatabase::createPlaylistsTable()
     // This table stores metadata about each playlist, such as its name, creation/update timestamps,
     // the current playback mode, and the index of the currently playing song within that playlist.
     // The 'name' field is set to be UNIQUE to ensure that each playlist has a distinct identifier.
-    const QString createTableQuery = R"(
+    const QString createTableQuery{R"(
         CREATE TABLE IF NOT EXISTS playlists (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
@@ -228,7 +232,7 @@ bool PlaylistDatabase::createPlaylistsTable()
             play_mode INTEGER DEFAULT 0,
             current_index INTEGER DEFAULT -1
         )
-    )";
+    )"};
 
     QSqlQuery query(m_database);
     if (!query.exec(createTableQuery)) {
@@ -245,7 +249,7 @@ bool PlaylistDatabase::createAudioItemsTable()
     // This table stores unique audio track information, including title, artist, and various source URLs.
     // The 'audio_source' field is marked as UNIQUE to prevent duplicate entries for the same audio file,
     // ensuring data integrity and efficient lookups.
-    const QString createTableQuery = R"(
+    const QString createTableQuery{R"(
         CREATE TABLE IF NOT EXISTS audio_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
@@ -255,7 +259,7 @@ bool PlaylistDatabase::createAudioItemsTable()
             video_source TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
-    )";
+    )"};
 
     QSqlQuery query(m_database);
     if (!query.exec(createTableQuery)) {
@@ -272,7 +276,7 @@ bool PlaylistDatabase::createPlaylistItemsTable()
     // to link audio items to playlists. This many-to-many relationship allows a single audio item
     // to appear in multiple playlists and a playlist to contain multiple audio items.
     // The 'position' field maintains the order of songs within a specific playlist.
-    const QString createTableQuery = R"(
+    const QString createTableQuery{R"(
         CREATE TABLE IF NOT EXISTS playlist_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             playlist_id INTEGER NOT NULL,
@@ -282,7 +286,7 @@ bool PlaylistDatabase::createPlaylistItemsTable()
             FOREIGN KEY (audio_item_id) REFERENCES audio_items(id) ON DELETE CASCADE,
             UNIQUE(playlist_id, position) -- Ensures that each position within a playlist is unique.
         )
-    )";
+    )"};
 
     QSqlQuery query(m_database);
     if (!query.exec(createTableQuery)) {
@@ -299,7 +303,7 @@ bool PlaylistDatabase::createIndexes()
     // Indexes significantly improve the performance of read operations (SELECT statements)
     // by allowing the database to quickly locate rows without scanning the entire table.
     // This is crucial for responsive playlist management and audio item lookups.
-    QStringList indexQueries = {
+    const QStringList indexQueries{
         "CREATE INDEX IF NOT EXISTS idx_audio_source ON audio_items(audio_source)",
         "CREATE INDEX IF NOT EXISTS idx_playlist_items_playlist ON playlist_items(playlist_id)",
         "CREATE INDEX IF NOT EXISTS idx_playlist_items_position ON playlist_items(playlist_id, position)",
