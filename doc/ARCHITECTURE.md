@@ -114,6 +114,5 @@ ctest --preset dev
 2. 把 `MySongPlayerAppCore` 继续拆为 Qt Presentation、Multimedia、Network 和 SQL targets，让链接图约束依赖方向。
 3. 让 `PlaylistModel` 只投影一个权威 Core playlist，移除 Qt/Core 双集合手动同步。
 4. 把歌词文件查找、网络搜索映射和数据库快照迁移为标准库端口；各自的 Qt 实现留在 infrastructure。
-5. 删除或正式接入未使用的 `AudioCoordinator`，避免与 `PlayerController → AudioPlayer` 形成两套控制路径。
 
 这些项目是有记录、可测试的迁移队列，不是新功能继续耦合到 Qt 单体的理由。

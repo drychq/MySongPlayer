@@ -79,7 +79,6 @@ set(APP_CORE_HEADERS
     src/include/adapters/QtAudioTrackAdapter.h
     src/include/controllers/AudioPlayer.h
     src/include/controllers/PlayerController.h
-    src/include/coordinators/AudioCoordinator.h
     src/include/coordinators/PlaylistCoordinator.h
     src/include/interfaces/ICurrentSongManager.h
     src/include/interfaces/IPlaylistOperations.h
@@ -107,7 +106,6 @@ set(APP_CORE_SOURCES
     src/adapters/QtAudioTrackAdapter.cpp
     src/controllers/AudioPlayer.cpp
     src/controllers/PlayerController.cpp
-    src/coordinators/AudioCoordinator.cpp
     src/coordinators/PlaylistCoordinator.cpp
     src/models/AudioInfo.cpp
     src/models/AudioSearchModel.cpp
