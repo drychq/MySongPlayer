@@ -5,7 +5,7 @@
 namespace SongPlayer::Core {
 
 struct AudioTrack {
-    int songIndex = -1;
+    int songIndex{-1};
     std::string title;
     std::string authorName;
     std::string audioSource;

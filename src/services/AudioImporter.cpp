@@ -16,10 +16,20 @@
 #include <utility>
 #include <vector>
 
+using std::in_range;
+using std::make_shared;
+using std::make_unique;
+using std::set;
+using std::shared_ptr;
+using std::size_t;
+using std::string;
+using std::vector;
+namespace fs = std::filesystem;
+
 namespace SongPlayer {
 namespace {
 
-constexpr auto kDefaultIconUrl = "qrc:/qt/qml/MySongPlayer/assets/icons/app_icon.png";
+constexpr auto kDefaultIconUrl{"qrc:/qt/qml/MySongPlayer/assets/icons/app_icon.png"};
 
 } // namespace
 
@@ -38,15 +48,15 @@ struct AudioImporter::ImportSession {
 
 AudioImporter::AudioImporter(QObject* parent)
     : AudioImporter(
-          std::make_shared<Infrastructure::TagLibAudioMetadataReader>(), parent)
+          make_shared<Infrastructure::TagLibAudioMetadataReader>(), parent)
 {}
 
 AudioImporter::AudioImporter(
-    std::shared_ptr<const Core::IAudioMetadataReader> metadataReader,
+    shared_ptr<const Core::IAudioMetadataReader> metadataReader,
     QObject* parent)
     : QObject(parent)
-    , m_metadataReader(std::move(metadataReader))
-    , m_session(std::make_unique<ImportSession>())
+    , m_metadataReader{std::move(metadataReader)}
+    , m_session{make_unique<ImportSession>()}
 {
     Q_ASSERT(m_metadataReader);
 
@@ -89,12 +99,17 @@ void AudioImporter::importLocalAudio(const QList<QUrl>& fileUrls)
         return;
     }
 
-    std::set<std::filesystem::path> seenFiles;
-    std::vector<std::filesystem::path> uniqueFiles;
-    uniqueFiles.reserve(static_cast<std::size_t>(fileUrls.size()));
-    int invalidInputs = 0;
+    if (!in_range<int>(fileUrls.size())) {
+        emit importRejected(QStringLiteral("The import batch is too large"));
+        return;
+    }
+
+    set<fs::path> seenFiles;
+    vector<fs::path> uniqueFiles;
+    uniqueFiles.reserve(static_cast<size_t>(fileUrls.size()));
+    int invalidInputs{0};
     for (const QUrl& url : fileUrls) {
-        std::filesystem::path file = QtAdapter::toLocalFilePath(url).lexically_normal();
+        fs::path file{QtAdapter::toLocalFilePath(url).lexically_normal()};
         if (file.empty()) {
             ++invalidInputs;
             emit importFailed(url, QStringLiteral("Only local audio files can be imported"));
@@ -108,20 +123,19 @@ void AudioImporter::importLocalAudio(const QList<QUrl>& fileUrls)
         uniqueFiles.push_back(std::move(file));
     }
 
-    std::vector<Core::AudioImportRequest> requests;
+    vector<Core::AudioImportRequest> requests;
     requests.reserve(uniqueFiles.size());
-    const std::filesystem::path cacheRoot = QtAdapter::toLocalFilePath(QUrl::fromLocalFile(
-        QStandardPaths::writableLocation(QStandardPaths::CacheLocation)));
-    const std::filesystem::path coverCache =
-        cacheRoot / std::string(Core::kCoverCacheDirectoryName);
-    for (const std::filesystem::path& file : uniqueFiles) {
+    const fs::path cacheRoot{QtAdapter::toLocalFilePath(QUrl::fromLocalFile(
+        QStandardPaths::writableLocation(QStandardPaths::CacheLocation)))};
+    const fs::path coverCache{cacheRoot / string{Core::kCoverCacheDirectoryName}};
+    for (const fs::path& file : uniqueFiles) {
         requests.push_back(Core::AudioImportRequest{
             .audioFile = file,
             .coverCacheDirectory = coverCache,
         });
     }
 
-    resetProgress(fileUrls.size(), invalidInputs);
+    resetProgress(static_cast<int>(fileUrls.size()), invalidInputs);
 
     if (requests.empty()) {
         emit importStarted(m_importTotal);
@@ -133,12 +147,12 @@ void AudioImporter::importLocalAudio(const QList<QUrl>& fileUrls)
     emit importingChanged();
     emit importStarted(m_importTotal);
 
-    auto task = [reader = m_metadataReader,
-                 requests = std::move(requests)](
+    auto task{[reader = m_metadataReader,
+               requests = std::move(requests)](
                     QPromise<Core::AudioImportResult>& promise) mutable {
         promise.setProgressRange(0, static_cast<int>(requests.size()));
 
-        int completed = 0;
+        int completed{0};
         for (const Core::AudioImportRequest& request : requests) {
             promise.suspendIfRequested();
             if (promise.isCanceled()) {
@@ -148,10 +162,10 @@ void AudioImporter::importLocalAudio(const QList<QUrl>& fileUrls)
             promise.addResult(reader->read(request));
             promise.setProgressValue(++completed);
         }
-    };
+    }};
 
-    QFuture<Core::AudioImportResult> future =
-        QtConcurrent::run(&m_session->pool, std::move(task));
+    QFuture<Core::AudioImportResult> future{
+        QtConcurrent::run(&m_session->pool, std::move(task))};
     m_session->watcher.setFuture(future);
 }
 
@@ -167,16 +181,16 @@ void AudioImporter::handleResult(int resultIndex)
 {
     Q_ASSERT(QThread::currentThread() == thread());
 
-    const Core::AudioImportResult result =
-        m_session->watcher.future().resultAt(resultIndex);
+    const Core::AudioImportResult result{
+        m_session->watcher.future().resultAt(resultIndex)};
     ++m_importCompleted;
 
     if (result) {
         ++m_importedCount;
-        const Core::ImportedAudio& imported = *result;
-        const QUrl coverUrl = imported.coverFile
+        const Core::ImportedAudio& imported{*result};
+        const QUrl coverUrl{imported.coverFile
             ? QtAdapter::fromLocalFilePath(*imported.coverFile)
-            : QUrl(QString::fromLatin1(kDefaultIconUrl));
+            : QUrl{QString::fromLatin1(kDefaultIconUrl)}};
         emit audioImported(
             QtAdapter::fromUtf8String(imported.title),
             QtAdapter::fromUtf8String(imported.artist),
@@ -196,7 +210,7 @@ void AudioImporter::handleFinished()
 {
     Q_ASSERT(QThread::currentThread() == thread());
 
-    const bool canceled = m_session->watcher.future().isCanceled();
+    const bool canceled{m_session->watcher.future().isCanceled()};
     if (m_importing) {
         m_importing = false;
         emit importingChanged();

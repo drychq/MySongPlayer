@@ -54,11 +54,11 @@ private:
 
     std::shared_ptr<const Core::IAudioMetadataReader> m_metadataReader;
     std::unique_ptr<ImportSession> m_session;
-    bool m_importing = false;
-    int m_importCompleted = 0;
-    int m_importTotal = 0;
-    int m_importedCount = 0;
-    int m_failedCount = 0;
+    bool m_importing{false};
+    int m_importCompleted{0};
+    int m_importTotal{0};
+    int m_importedCount{0};
+    int m_failedCount{0};
 };
 
 } // namespace SongPlayer

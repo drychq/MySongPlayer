@@ -101,7 +101,7 @@ ctest --preset dev
 
 - Core-only 构建在禁用 Qt/TagLib package lookup 时通过。
 - GCC/Clang 的 C++23 + warnings-as-errors 构建通过。
-- Core、SQLite 和异步导入测试通过；QML lint 已纳入完整 CTest。
+- Core、SQLite、模型、受控网络和异步导入测试通过；offscreen Qt Quick Test 与 QML lint 已纳入完整 CTest。
 - 慢速 fake reader 执行时 GUI heartbeat 继续运行；reader 不在 GUI 线程，模型回调在 GUI 线程。
 - 取消、并发请求、进度和终态汇总行为有确定性测试。
 - 新核心文件即使忘记加入 target，也会进入架构依赖扫描。

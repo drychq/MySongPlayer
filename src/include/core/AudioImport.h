@@ -24,7 +24,7 @@ struct ImportedAudio {
 };
 
 struct AudioImportError {
-    AudioImportErrorCode code = AudioImportErrorCode::UnexpectedFailure;
+    AudioImportErrorCode code{AudioImportErrorCode::UnexpectedFailure};
     std::filesystem::path audioFile;
     std::string message;
 };
