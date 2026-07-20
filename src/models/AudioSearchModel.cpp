@@ -1,41 +1,127 @@
 #include "models/AudioSearchModel.h"
+
 #include "models/AudioInfo.h"
-#include <QJsonDocument>
-#include <QNetworkReply>
-#include <QUrlQuery>
-#include <QJsonObject>
+
 #include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QUrlQuery>
+
+#include <limits>
+#include <optional>
+#include <utility>
 
 namespace {
-    const QString &k_requestUrl = "https://api.jamendo.com/v3.0/tracks/";
-    const QString &k_clientId = "85b6a59c";
+
+using std::numeric_limits;
+using std::nullopt;
+using std::optional;
+
+QUrl defaultRequestUrl()
+{
+    return QUrl{QStringLiteral("https://api.jamendo.com/v3.0/tracks/")};
 }
 
+int boundedRowCount(qsizetype count)
+{
+    const qsizetype maximum{numeric_limits<int>::max()};
+    return static_cast<int>(qMin(count, maximum));
+}
+
+optional<QList<AudioInfo *>> audioItemsFromJson(const QByteArray &data, QObject *parent)
+{
+    QJsonParseError parseError{};
+    const QJsonDocument document{QJsonDocument::fromJson(data, &parseError)};
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        qWarning() << "Invalid audio search response:" << parseError.errorString();
+        return nullopt;
+    }
+
+    const QJsonObject root{document.object()};
+    const QJsonObject headers{root.value(QStringLiteral("headers")).toObject()};
+    if (headers.value(QStringLiteral("status")).toString() != QStringLiteral("success")) {
+        qWarning() << "Audio search failed:"
+                   << headers.value(QStringLiteral("error_string")).toString();
+        return nullopt;
+    }
+
+    const QJsonValue resultsValue{root.value(QStringLiteral("results"))};
+    if (!resultsValue.isArray()) {
+        qWarning() << "Invalid audio search response: results is not an array";
+        return nullopt;
+    }
+
+    QList<AudioInfo *> audioItems{};
+    // Braces would select QJsonArray's initializer-list constructor and wrap the
+    // returned array as a single nested value instead of copying it.
+    const QJsonArray results(resultsValue.toArray());
+    audioItems.reserve(results.size());
+    for (qsizetype index{0}; index < results.size(); ++index) {
+        const QJsonObject entry{results.at(index).toObject()};
+        if (!entry.value(QStringLiteral("audiodownload_allowed")).toBool()) {
+            continue;
+        }
+
+        auto *audioInfo{new AudioInfo{parent}};
+        audioInfo->setTitle(entry.value(QStringLiteral("name")).toString());
+        audioInfo->setAuthorName(entry.value(QStringLiteral("artist_name")).toString());
+        audioInfo->setImageSource(
+            QUrl{entry.value(QStringLiteral("image")).toString()});
+        audioInfo->setAudioSource(
+            QUrl{entry.value(QStringLiteral("audiodownload")).toString()});
+        audioItems.append(audioInfo);
+    }
+
+    return audioItems;
+}
+
+} // namespace
+
 AudioSearchModel::AudioSearchModel(QObject *parent)
-    : QAbstractListModel(parent)
+    : AudioSearchModel{nullptr, defaultRequestUrl(), parent}
 {}
+
+AudioSearchModel::AudioSearchModel(QNetworkAccessManager *networkManager,
+                                   QUrl requestUrl,
+                                   QObject *parent)
+    : QAbstractListModel{parent}
+    , m_networkManager{networkManager != nullptr ? networkManager : &m_ownedNetworkManager}
+    , m_requestUrl{std::move(requestUrl)}
+{}
+
+AudioSearchModel::~AudioSearchModel()
+{
+    cancelActiveRequest();
+}
 
 int AudioSearchModel::rowCount(const QModelIndex &parent) const
 {
-    Q_UNUSED(parent);
-    return m_audioList.size();
+    if (parent.isValid()) {
+        return 0;
+    }
+
+    return boundedRowCount(m_audioList.size());
 }
 
 QVariant AudioSearchModel::data(const QModelIndex &index, int role) const
 {
-    if (index.isValid() && index.row() >= 0 && index.row() < m_audioList.size()) {
-        AudioInfo *audioInfo = m_audioList[index.row()];
+    if (!index.isValid() || index.row() < 0 || index.row() >= m_audioList.size()) {
+        return {};
+    }
 
-        switch((Role)role) {
-        case AudioNameRole:
-            return audioInfo->title();
-        case AudioAuthorRole:
-            return audioInfo->authorName();
-        case AudioImageSourceRole:
-            return audioInfo->imageSource();
-        case AudioSourceRole:
-            return audioInfo->audioSource();
-        }
+    const AudioInfo *audioInfo{m_audioList.at(index.row())};
+    switch (static_cast<Role>(role)) {
+    case AudioNameRole:
+        return audioInfo->title();
+    case AudioAuthorRole:
+        return audioInfo->authorName();
+    case AudioImageSourceRole:
+        return audioInfo->imageSource();
+    case AudioSourceRole:
+        return audioInfo->audioSource();
     }
 
     return {};
@@ -43,78 +129,97 @@ QVariant AudioSearchModel::data(const QModelIndex &index, int role) const
 
 QHash<int, QByteArray> AudioSearchModel::roleNames() const
 {
-    QHash<int, QByteArray> names;
-
-    names[AudioNameRole] = "audioName";
-    names[AudioAuthorRole] = "audioAuthor";
-    names[AudioImageSourceRole] = "audioImageSource";
-    names[AudioSourceRole] = "audioSource";
-
-    return names;
+    return {
+        {AudioNameRole, QByteArrayLiteral("audioName")},
+        {AudioAuthorRole, QByteArrayLiteral("audioAuthor")},
+        {AudioImageSourceRole, QByteArrayLiteral("audioImageSource")},
+        {AudioSourceRole, QByteArrayLiteral("audioSource")},
+    };
 }
 
 void AudioSearchModel::searchSong(const QString &name)
 {
-    if (!name.trimmed().isEmpty()) {
-        if (m_reply) {
-            m_reply->abort();
-            m_reply->deleteLater();
-            m_reply = nullptr;
-        }
-
-        QUrlQuery query;
-        query.addQueryItem("client_id", k_clientId);
-        query.addQueryItem("namesearch", name);
-        query.addQueryItem("format", "json");
-
-        setIsSearching(true);
-        m_reply = m_networkManager.get(QNetworkRequest(k_requestUrl + "?" + query.toString()));
-        connect(m_reply, &QNetworkReply::finished, this, &AudioSearchModel::parseData);
+    const QString searchTerm{name.trimmed()};
+    cancelActiveRequest();
+    if (searchTerm.isEmpty()) {
+        setIsSearching(false);
+        return;
     }
+
+    if (!m_networkManager) {
+        qWarning() << "Cannot search without a network access manager";
+        setIsSearching(false);
+        return;
+    }
+
+    QUrl requestUrl{m_requestUrl};
+    QUrlQuery query{requestUrl};
+    query.addQueryItem(QStringLiteral("client_id"), QStringLiteral("85b6a59c"));
+    query.addQueryItem(QStringLiteral("namesearch"), searchTerm);
+    query.addQueryItem(QStringLiteral("format"), QStringLiteral("json"));
+    requestUrl.setQuery(query);
+
+    setIsSearching(true);
+    QNetworkReply *reply{m_networkManager->get(QNetworkRequest{requestUrl})};
+    if (reply == nullptr) {
+        qWarning() << "Network access manager returned no reply";
+        setIsSearching(false);
+        return;
+    }
+
+    m_reply = reply;
+    const QPointer<QNetworkReply> guardedReply{reply};
+    connect(reply, &QNetworkReply::finished, this, [this, guardedReply] {
+        handleReply(guardedReply);
+    });
 }
 
-void AudioSearchModel::parseData()
+void AudioSearchModel::cancelActiveRequest()
 {
-    if (m_reply->error() == QNetworkReply::NoError) {
-        beginResetModel();
+    const QPointer<QNetworkReply> reply{m_reply};
+    m_reply.clear();
+    if (!reply) {
+        return;
+    }
 
-        qDeleteAll(m_audioList);
-        m_audioList.clear();
+    reply->abort();
+    reply->deleteLater();
+}
 
-        QByteArray data = m_reply->readAll();
+void AudioSearchModel::handleReply(const QPointer<QNetworkReply> &reply)
+{
+    if (!reply) {
+        return;
+    }
 
-        QJsonDocument jsonDocument = QJsonDocument::fromJson(data);
-        QJsonObject headers = jsonDocument["headers"].toObject();
+    const bool isCurrentReply{m_reply == reply};
+    if (isCurrentReply) {
+        m_reply.clear();
+    }
+    reply->deleteLater();
 
-        if (headers["status"].toString() == "success") {
-            QJsonArray results = jsonDocument["results"].toArray();
-
-            for (const auto &result : std::as_const(results)) {
-                QJsonObject entry = result.toObject();
-
-                if (entry["audiodownload_allowed"].toBool()) {
-                    AudioInfo *audioInfo = new AudioInfo(this);
-
-                    audioInfo->setTitle(entry["name"].toString());
-                    audioInfo->setAuthorName(entry["artist_name"].toString());
-                    audioInfo->setImageSource(entry["image"].toString());
-                    audioInfo->setAudioSource(entry["audiodownload"].toString());
-
-                    m_audioList << audioInfo;
-                }
-            }
-        } else {
-            qWarning() << headers["error_string"];
-        }
-
-        endResetModel();
-    } else if (m_reply->error() != QNetworkReply::OperationCanceledError) {
-        qCritical() << "Reply failed, eror:" << m_reply->errorString();
+    if (!isCurrentReply) {
+        return;
     }
 
     setIsSearching(false);
-    m_reply->deleteLater();
-    m_reply = nullptr;
+    if (reply->error() == QNetworkReply::OperationCanceledError) {
+        return;
+    }
+    if (reply->error() != QNetworkReply::NoError) {
+        qWarning() << "Audio search reply failed:" << reply->errorString();
+        return;
+    }
+
+    optional<QList<AudioInfo *>> audioItems{audioItemsFromJson(reply->readAll(), this)};
+    if (!audioItems) {
+        return;
+    }
+
+    beginResetModel();
+    qDeleteAll(m_audioList);
+    m_audioList = std::move(*audioItems);
+    endResetModel();
 }
 
 bool AudioSearchModel::isSearching() const
@@ -124,8 +229,10 @@ bool AudioSearchModel::isSearching() const
 
 void AudioSearchModel::setIsSearching(bool newIsSearching)
 {
-    if (m_isSearching == newIsSearching)
+    if (m_isSearching == newIsSearching) {
         return;
+    }
+
     m_isSearching = newIsSearching;
     emit isSearchingChanged();
 }
