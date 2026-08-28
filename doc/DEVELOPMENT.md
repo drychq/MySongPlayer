@@ -1,6 +1,6 @@
 # MySongPlayer - 开发文档
 
-**更新日期：** 2026-07-11
+**更新日期：** 2026-08-28
 
 ---
 
@@ -175,11 +175,18 @@
     ```
 
 4.  **打包（Linux AppImage）：**
-    我们提供了一个脚本 `scripts/build-appimage.sh`，可以在Linux上把程序打包成AppImage格式，方便分发。
+    首版发布目标为 Linux x86_64 AppImage，运行环境目标是 Ubuntu 22.04（glibc 2.35）及更新版本。必须从仓库根目录执行脚本：
     ```bash
-    cd scripts
-    ./build-appimage.sh
+    ./scripts/build-appimage.sh
     ```
+    产物位于仓库根目录的 `dist/release/`，正式文件名为 `MySongPlayer-X.Y.Z-linux-x86_64.AppImage`，校验文件为 `MySongPlayer-X.Y.Z-linux-x86_64.AppImage.sha256`。版本始终取自 `CMakeLists.txt` 中的 `PROJECT_VERSION`；可选环境变量 `APP_VERSION` 只校验期望版本，不会覆盖 CMake 版本。脚本使用的 AppImage 打包工具和 Qt 部署依赖需要联网下载。
+
+### 6.3 发布约定
+
+- 首版只发布 Linux x86_64 AppImage；Windows 和 macOS 暂无 Release 二进制。
+- 维护者先通过 GitHub Actions 的 `workflow_dispatch` 手动试包，确认构建成功并下载验证 Artifact，再发布正式版本。
+- 正式发布时，在已验证的 `main` 提交上创建注解 Tag `vX.Y.Z`，且版本号必须与 `CMakeLists.txt` 中的 `project(... VERSION X.Y.Z ...)` 一致。Tag 推送后触发自动发布。
+- 已发布 Tag 不得移动或复用。Release 页面为：<https://github.com/drychq/MySongPlayer/releases>。
 
 
 ---

@@ -113,21 +113,25 @@ MySongPlayer/
 └── CMakeLists.txt             # CMake 构建文件
 ```
 
-## 打包
+## 发布与打包
 
-项目提供了 `AppImage` 打包脚本，方便在 Linux 系统中分发。
+首版仅发布 Linux x86_64 AppImage，目标运行环境为 Ubuntu 22.04（glibc 2.35）及更新版本。Windows 和 macOS 暂无 Release 二进制。正式下载请访问 [GitHub Releases](https://github.com/drychq/MySongPlayer/releases)。
+
+从仓库根目录执行本地打包：
 
 ```bash
-# 确保已完成标准构建流程
-
-# 切换到 scripts 目录
-cd ../scripts
-
-# 运行打包脚本
-bash build-appimage.sh
+./scripts/build-appimage.sh
 ```
 
-打包完成后，生成的 `MySongPlayer-x86_64.AppImage` 文件位于项目根目录下的 `dist` 目录中。
+脚本会将产物写入仓库根目录的 `dist/release/`。版本始终取自 `CMakeLists.txt` 中的 `PROJECT_VERSION`，正式文件名为 `MySongPlayer-X.Y.Z-linux-x86_64.AppImage`；可选环境变量 `APP_VERSION` 仅用于校验期望版本，不会覆盖 CMake 版本。对应校验文件为 `MySongPlayer-X.Y.Z-linux-x86_64.AppImage.sha256`。
+
+下载 Release 资产后，先校验并运行（将示例文件名替换为实际资产名）：
+
+```bash
+chmod +x MySongPlayer-X.Y.Z-linux-x86_64.AppImage
+sha256sum -c MySongPlayer-X.Y.Z-linux-x86_64.AppImage.sha256
+./MySongPlayer-X.Y.Z-linux-x86_64.AppImage
+```
 
 ## 开发文档
 
