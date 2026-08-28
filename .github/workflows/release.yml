@@ -1,0 +1,359 @@
+name: Release AppImage
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+# Jobs that do not publish keep the repository token read-only.  The release
+# job opts in to the minimum extra permission it needs below.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build AppImage
+    runs-on: ubuntu-24.04
+    container: ubuntu:22.04
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact_name: ${{ steps.package.outputs.artifact_name }}
+      appimage_name: ${{ steps.package.outputs.appimage_name }}
+      checksum_name: ${{ steps.package.outputs.checksum_name }}
+
+    steps:
+      - name: Install build prerequisites
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install --yes --no-install-recommends \
+            ca-certificates curl file g++-12 gcc-12 git libasound2-dev \
+            libdbus-1-dev libegl1-mesa-dev libfontconfig1-dev libfreetype6-dev \
+            libgl1-mesa-dev libglib2.0-dev libnss3-dev libpulse-dev \
+            libx11-xcb-dev libxcb-cursor-dev libxcb-glx0 libxcb-icccm4-dev \
+            libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev \
+            libxcb-render-util0-dev libxcb-shape0-dev libxcb-shm0-dev \
+            libxcb-sync-dev libxcb-xfixes0-dev libxcb-xinerama0-dev \
+            libxcb-xkb-dev libxext-dev libxfixes-dev libxi-dev libxkbcommon-dev \
+            libwayland-dev libxrender-dev libxkbcommon-x11-dev p7zip-full \
+            pkg-config python3 unzip wget xz-utils zlib1g-dev
+
+      - name: Bootstrap GCC, CMake, and Ninja
+        run: |
+          set -euo pipefail
+          tool_dir="$RUNNER_TEMP/bootstrap"
+          mkdir -p "$tool_dir/bin"
+
+          gcc-12 --version | head -n1 | grep -Eq 'gcc.* 12\.'
+          g++-12 --version | head -n1 | grep -Eq 'g\+\+.* 12\.'
+
+          cmake_archive="$tool_dir/cmake-3.31.6-linux-x86_64.tar.gz"
+          curl --fail --location --retry 3 --silent --show-error \
+            --output "$cmake_archive" \
+            https://cmake.org/files/v3.31/cmake-3.31.6-linux-x86_64.tar.gz
+          echo '5a1133ff103c71eb5120e2cc3de922733e7d8a26a98ae716397e8676adb367bf  '"$cmake_archive" | sha256sum --check --strict
+          tar --extract --gzip --file "$cmake_archive" --directory "$tool_dir"
+
+          ninja_archive="$tool_dir/ninja-linux.zip"
+          curl --fail --location --retry 3 --silent --show-error \
+            --output "$ninja_archive" \
+            https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-linux.zip
+          echo '5749cbc4e668273514150a80e387a957f933c6ed3f5f11e03fb30955e2bbead6  '"$ninja_archive" | sha256sum --check --strict
+          unzip -q "$ninja_archive" -d "$tool_dir/ninja"
+          install -m 0755 "$tool_dir/ninja/ninja" "$tool_dir/bin/ninja"
+
+          export PATH="$tool_dir/cmake-3.31.6-linux-x86_64/bin:$tool_dir/bin:$PATH"
+          cmake --version | head -n1 | grep -Fx 'cmake version 3.31.6'
+          ninja --version | grep -Fx '1.13.2'
+          {
+            echo "PATH=$tool_dir/cmake-3.31.6-linux-x86_64/bin:$tool_dir/bin:$PATH"
+            echo "CC=gcc-12"
+            echo "CXX=g++-12"
+          } >> "$GITHUB_ENV"
+
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Resolve and validate version
+        id: version
+        run: |
+          set -euo pipefail
+          cmake_version="$(sed -nE 's/^project\(MySongPlayer VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' CMakeLists.txt)"
+          [[ -n "$cmake_version" ]] || { echo "Could not read the CMake project version" >&2; exit 1; }
+          [[ "$cmake_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "CMake project version must use X.Y.Z format: $cmake_version" >&2
+            exit 1
+          }
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v${cmake_version}" ]]; then
+            echo "Tag '$GITHUB_REF_NAME' must exactly equal v$cmake_version" >&2
+            exit 1
+          fi
+          echo "version=$cmake_version" >> "$GITHUB_OUTPUT"
+
+      - name: Install Qt 6.11.1
+        id: qt
+        uses: jurplel/install-qt-action@48d3ad6db93f3627c8ee7a0454bc6f3744f7e730 # v4.3.1
+        with:
+          version: 6.11.1
+          host: linux
+          target: desktop
+          modules: qtmultimedia qtwayland qtsvg
+          install-deps: false
+          dir: ${{ runner.temp }}/Qt
+
+      - name: Verify Qt modules
+        run: |
+          set -euo pipefail
+          command -v qmake >/dev/null
+          qmake --version | grep -F 'Qt version 6.11.1'
+          qt_prefix="$(qmake -query QT_INSTALL_PREFIX)"
+          for module in Qt6Qml Qt6Quick Qt6Multimedia Qt6WaylandClient Qt6Svg; do
+            test -f "$qt_prefix/lib/cmake/$module/${module}Config.cmake" || {
+              echo "Missing required Qt module: $module" >&2
+              exit 1
+            }
+          done
+      - name: Build and install TagLib 2.3.1
+        run: |
+          set -euo pipefail
+          taglib_dir="$RUNNER_TEMP/taglib-src"
+          taglib_prefix="$RUNNER_TEMP/taglib"
+          taglib_archive="$RUNNER_TEMP/taglib-2.3.1.tar.gz"
+          curl --fail --location --retry 3 --silent --show-error \
+            --output "$taglib_archive" \
+            https://github.com/taglib/taglib/releases/download/v2.3.1/taglib-2.3.1.tar.gz
+          echo 'a19d90e6fd41d09a0281ec0fe762d51491d7a6ccffc923c4f7868c5e647ca230  '"$taglib_archive" | sha256sum --check --strict
+          mkdir -p "$taglib_dir"
+          tar --extract --gzip --file "$taglib_archive" --strip-components=1 --directory "$taglib_dir"
+          cmake -S "$taglib_dir" -B "$taglib_dir/build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$taglib_prefix" \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_EXAMPLES=OFF \
+            -DBUILD_BINDINGS=OFF \
+            -DBUILD_TESTING=OFF \
+            -DWITH_ZLIB=ON
+          cmake --build "$taglib_dir/build" --parallel
+          cmake --install "$taglib_dir/build"
+          test -f "$taglib_prefix/lib/pkgconfig/taglib.pc"
+          {
+            echo "TAGLIB_PREFIX=$taglib_prefix"
+            echo "CMAKE_PREFIX_PATH=$taglib_prefix${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
+            echo "PKG_CONFIG_PATH=$taglib_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+            echo "LD_LIBRARY_PATH=$taglib_prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          } >> "$GITHUB_ENV"
+
+      - name: Build AppImage
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          scripts/build-appimage.sh
+
+      - name: Stage exact release assets
+        id: package
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          asset_name="MySongPlayer-${APP_VERSION}-linux-x86_64.AppImage"
+          checksum_name="${asset_name}.sha256"
+          artifact_name="mysongplayer-appimage-${APP_VERSION}"
+          release_dir="dist/release"
+          test -f "$release_dir/$asset_name"
+          test -f "$release_dir/$checksum_name"
+          (
+            cd "$release_dir"
+            sha256sum --check --strict "$checksum_name"
+          )
+          mapfile -t release_files < <(
+            find "$release_dir" -maxdepth 1 -type f \
+              \( -name '*.AppImage' -o -name '*.AppImage.sha256' \) \
+              -printf '%f\n' | sort
+          )
+          [[ ${#release_files[@]} -eq 2 ]] || {
+            echo "Expected exactly two release files, found ${#release_files[@]}" >&2
+            exit 1
+          }
+          {
+            echo "artifact_name=$artifact_name"
+            echo "appimage_name=$asset_name"
+            echo "checksum_name=$checksum_name"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: |
+            dist/release/${{ steps.package.outputs.appimage_name }}
+            dist/release/${{ steps.package.outputs.checksum_name }}
+          if-no-files-found: error
+          retention-days: 14
+
+  smoke:
+    name: Smoke test AppImage
+    needs: build
+    runs-on: ubuntu-24.04
+    container: ubuntu:22.04
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Install smoke-test prerequisites
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install --yes --no-install-recommends \
+            file libdbus-1-3 libfontconfig1 libfreetype6 libfuse2 libgl1 \
+            libglib2.0-0 libpulse0 libwayland-client0 libx11-6 libx11-xcb1 \
+            libxcb1 libxcb-cursor0 libxcb-render0 libxcb-render-util0 \
+            libxcb-shape0 libxcb-shm0 libxcb-xfixes0 libxcb-xkb1 libxext6 \
+            libxi6 libxkbcommon0 libxkbcommon-x11-0 libxrender1 xauth xvfb
+
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: release-artifact
+
+      - name: Verify AppImage contents and startup behavior
+        env:
+          APPIMAGE_NAME: ${{ needs.build.outputs.appimage_name }}
+          CHECKSUM_NAME: ${{ needs.build.outputs.checksum_name }}
+        run: |
+          set -euo pipefail
+          cd release-artifact
+          test -f "$APPIMAGE_NAME"
+          test -f "$CHECKSUM_NAME"
+          sha256sum --check --strict "$CHECKSUM_NAME"
+          file "$APPIMAGE_NAME" | grep -F 'ELF'
+          chmod +x "$APPIMAGE_NAME"
+          "./$APPIMAGE_NAME" --appimage-extract >/dev/null
+          find -L squashfs-root -mindepth 1 -printf '%P\n' | sort > appimage-files.txt
+          grep -Fx 'AppRun' appimage-files.txt
+          grep -Fx 'usr/bin/appMySongPlayer' appimage-files.txt
+          grep -Fx 'usr/share/applications/MySongPlayer.desktop' appimage-files.txt
+          grep -Fx 'usr/share/icons/hicolor/256x256/apps/MySongPlayer.png' appimage-files.txt
+          grep -Eq '^usr/(lib/qt6/)?plugins/platforms/libqxcb\.so$' appimage-files.txt
+          grep -Eq '^usr/(lib/qt6/)?plugins/platforms/libqwayland[^/]*\.so$' appimage-files.txt
+          grep -Eq '^usr/(lib/qt6/)?plugins/sqldrivers/libqsqlite\.so$' appimage-files.txt
+          grep -Eq '^usr/(lib/qt6/)?plugins/multimedia/libffmpegmediaplugin\.so' appimage-files.txt
+          grep -Eq '^usr/(lib/qt6/)?plugins/imageformats/libqsvg\.so$' appimage-files.txt
+          grep -Eq '^usr/(lib/qt6/)?qml/QtQuick/Controls/qmldir$' appimage-files.txt
+          grep -Eq '^usr/(lib/qt6/)?qml/QtMultimedia/qmldir$' appimage-files.txt
+
+          file squashfs-root/usr/bin/appMySongPlayer | grep -F 'ELF'
+          test -x squashfs-root/AppRun
+          [[ "$(readlink squashfs-root/AppRun)" == 'usr/bin/appMySongPlayer' ]]
+
+          verify_elf_dependencies() {
+            local elf_path="$1"
+            local dependencies
+            file "$elf_path" | grep -F 'ELF'
+            dependencies="$(LD_LIBRARY_PATH="$PWD/squashfs-root/usr/lib" ldd "$elf_path")"
+            printf '%s\n' "$dependencies" >> appimage-ldd.txt
+            ! grep -Fq 'not found' <<< "$dependencies"
+          }
+          verify_elf_dependencies squashfs-root/usr/bin/appMySongPlayer
+          for plugin_pattern in \
+            '*/plugins/platforms/libqxcb.so' \
+            '*/plugins/platforms/libqwayland*.so' \
+            '*/plugins/sqldrivers/libqsqlite.so' \
+            '*/plugins/multimedia/libffmpegmediaplugin.so*' \
+            '*/plugins/imageformats/libqsvg.so'; do
+            while IFS= read -r plugin_path; do
+              verify_elf_dependencies "$plugin_path"
+            done < <(find squashfs-root -type f -path "$plugin_pattern" -print)
+          done
+
+          set +e
+          timeout --signal=TERM --kill-after=5s 20s \
+            xvfb-run -a env APPIMAGE_EXTRACT_AND_RUN=1 "./$APPIMAGE_NAME"
+          status=$?
+          set -e
+          [[ $status -eq 124 ]] || {
+            echo "Expected GUI smoke test to end only by timeout, got exit status $status" >&2
+            exit 1
+          }
+
+  release:
+    name: Publish GitHub Release
+    needs: [build, smoke]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Download verified release artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: release-artifact
+
+      - name: Create or reuse draft and publish exact assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          APPIMAGE_NAME: ${{ needs.build.outputs.appimage_name }}
+          CHECKSUM_NAME: ${{ needs.build.outputs.checksum_name }}
+        run: |
+          set -euo pipefail
+          cd release-artifact
+          test -f "$APPIMAGE_NAME"
+          test -f "$CHECKSUM_NAME"
+          sha256sum --check --strict "$CHECKSUM_NAME"
+
+          if gh release view "$TAG" --json isDraft,assets > release.json 2>/dev/null; then
+            jq -e '.isDraft == true' release.json >/dev/null || {
+              echo "Release $TAG is already public; refusing to overwrite it" >&2
+              exit 1
+            }
+            jq -e --arg appimage "$APPIMAGE_NAME" --arg checksum "$CHECKSUM_NAME" \
+              'all(.assets[].name; . == $appimage or . == $checksum)' release.json >/dev/null || {
+              echo "Existing draft contains unexpected assets; refusing to modify it" >&2
+              exit 1
+            }
+          else
+            gh release create "$TAG" --draft --verify-tag \
+              --generate-notes --title "MySongPlayer $TAG"
+          fi
+
+          gh release upload "$TAG" "$APPIMAGE_NAME" "$CHECKSUM_NAME" --clobber
+          gh release view "$TAG" --json isDraft,assets > release.json
+          jq -e --arg appimage "$APPIMAGE_NAME" --arg checksum "$CHECKSUM_NAME" '
+            .isDraft == true and
+            ([.assets[].name] | sort) == ([$appimage, $checksum] | sort)
+          ' release.json >/dev/null || {
+            echo "Draft asset verification failed" >&2
+            exit 1
+          }
+          gh release edit "$TAG" --draft=false
+          gh release view "$TAG" --json isDraft,assets,url > published-release.json
+          jq -e --arg appimage "$APPIMAGE_NAME" --arg checksum "$CHECKSUM_NAME" '
+            .isDraft == false and
+            ([.assets[].name] | sort) == ([$appimage, $checksum] | sort)
+          ' published-release.json >/dev/null || {
+            echo "Published release verification failed" >&2
+            exit 1
+          }

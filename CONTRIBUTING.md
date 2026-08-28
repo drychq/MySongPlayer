@@ -87,14 +87,24 @@ ctest --preset dev
 
 ## 发布
 
-正式版本只从经过验证的 `main` 创建，Tag 使用注解形式 `vX.Y.Z`，并与 CMake 项目版本一致：
+首版只发布 Linux x86_64 AppImage，目标环境为 Ubuntu 22.04（glibc 2.35）及更新版本；Windows 和 macOS 暂无 Release 二进制。正式版本只从经过验证的 `main` 创建。维护者发布前必须先通过 GitHub Actions 的 `workflow_dispatch` 手动试包，并下载、检查 Artifact，确认产物可用后再发布。
+
+Tag 使用注解形式 `vX.Y.Z`，并与 `CMakeLists.txt` 中的 `project()` 版本一致：
 
 ```bash
 git tag -a v1.1.0 -m "MySongPlayer v1.1.0"
 git push origin v1.1.0
 ```
 
-不得移动或复用已发布 Tag。当前不维护历史发布线；只有明确需要并行支持旧版本时才创建 `maint/X.Y`。
+Tag 推送后触发自动发布。不得移动或复用已发布 Tag；当前不维护历史发布线，只有明确需要并行支持旧版本时才创建 `maint/X.Y`。正式产物与校验文件发布在 [GitHub Releases](https://github.com/drychq/MySongPlayer/releases)。
+
+本地打包必须从仓库根目录运行：
+
+```bash
+./scripts/build-appimage.sh
+```
+
+产物写入 `dist/release/`，正式文件名必须为 `MySongPlayer-X.Y.Z-linux-x86_64.AppImage`，校验文件必须为 `MySongPlayer-X.Y.Z-linux-x86_64.AppImage.sha256`。版本始终来自 `CMakeLists.txt` 的 `PROJECT_VERSION`；`APP_VERSION` 只是可选的期望版本校验变量，不得用于覆盖或改变 CMake 版本。
 
 ## 敏感信息和二进制文件
 
