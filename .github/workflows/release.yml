@@ -108,7 +108,8 @@ jobs:
           version: 6.11.1
           host: linux
           target: desktop
-          modules: qtmultimedia qtwayland qtsvg
+          arch: linux_gcc_64
+          modules: qtmultimedia
           install-deps: false
           setup-python: false
           dir: ${{ runner.temp }}/Qt
