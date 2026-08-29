@@ -97,7 +97,7 @@ jobs:
       - name: Bootstrap GCC, CMake, and Ninja
         run: |
           set -euo pipefail
-          tool_dir="$RUNNER_TEMP/bootstrap"
+          tool_dir="/opt/mysongplayer-bootstrap"
           mkdir -p "$tool_dir/bin"
 
           gcc-12 --version | head -n1 | grep -Eq 'gcc.* 12\.'
@@ -131,8 +131,12 @@ jobs:
         run: |
           set -euo pipefail
           taglib_dir="$RUNNER_TEMP/taglib-src"
-          taglib_prefix="$RUNNER_TEMP/taglib"
+          taglib_prefix="/opt/mysongplayer-taglib"
           taglib_archive="$RUNNER_TEMP/taglib-2.3.1.tar.gz"
+          command -v cmake
+          command -v ninja
+          cmake --version | head -n1 | grep -Fx 'cmake version 3.31.6'
+          ninja --version | grep -Fx '1.13.2'
           curl --fail --location --retry 3 --silent --show-error \
             --output "$taglib_archive" \
             https://github.com/taglib/taglib/releases/download/v2.3.1/taglib-2.3.1.tar.gz
@@ -162,6 +166,9 @@ jobs:
           APP_VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
+          command -v cmake
+          command -v ninja
+          test -f "$TAGLIB_PREFIX/lib/pkgconfig/taglib.pc"
           scripts/build-appimage.sh
 
       - name: Stage exact release assets
