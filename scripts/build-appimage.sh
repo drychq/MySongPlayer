@@ -16,6 +16,8 @@ readonly PROJECT_ROOT
 readonly BUILD_DIR="${PROJECT_ROOT}/build/package-linux"
 readonly RELEASE_DIR="${PROJECT_ROOT}/dist/release"
 readonly APPDIR_PATH="${RELEASE_DIR}/${APP_NAME}.AppDir"
+readonly FILTERED_QT_PLUGIN_DIR="${BUILD_DIR}/packaging/qt-plugins"
+readonly QMAKE_WRAPPER_PATH="${BUILD_DIR}/packaging/qmake-filtered"
 readonly ICON_FILE="${PROJECT_ROOT}/assets/icons/app_icon.png"
 readonly QML_SOURCES_DIR="${PROJECT_ROOT}/qml"
 readonly TOOLS_DIR="${PROJECT_ROOT}/tools"
@@ -187,6 +189,44 @@ for wayland_plugin in "${WAYLAND_PLUGINS[@]}"; do
 done
 readonly WAYLAND_PLUGIN_NAMES
 
+# linuxdeploy-plugin-qt deploys every driver in QT_INSTALL_PLUGINS/sqldrivers.
+# Present it with a read-only view that keeps all other plugin categories but
+# exposes only the SQLite driver this application uses. This avoids pulling in
+# MySQL/PostgreSQL client libraries for unused Qt SQL backends.
+[[ ! -e "${FILTERED_QT_PLUGIN_DIR}" ]] \
+    || die "filtered Qt plugin directory already exists: ${FILTERED_QT_PLUGIN_DIR}"
+mkdir -p "${FILTERED_QT_PLUGIN_DIR}/sqldrivers"
+while IFS= read -r qt_plugin_category; do
+    ln -s -- "${qt_plugin_category}" \
+        "${FILTERED_QT_PLUGIN_DIR}/$(basename "${qt_plugin_category}")"
+done < <(
+    find "${QT_PLUGIN_DIR}" -mindepth 1 -maxdepth 1 -type d \
+        ! -name sqldrivers -print | sort
+)
+cp -- "${QSQLITE_PLUGIN}" \
+    "${FILTERED_QT_PLUGIN_DIR}/sqldrivers/$(basename "${QSQLITE_PLUGIN}")"
+
+cat > "${QMAKE_WRAPPER_PATH}" <<'EOF'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+if [[ "$#" -eq 1 && "$1" == "-query" ]]; then
+    while IFS= read -r query_line; do
+        case "${query_line}" in
+            QT_INSTALL_PLUGINS:*)
+                printf 'QT_INSTALL_PLUGINS:%s\n' "${FILTERED_QT_PLUGIN_DIR}"
+                ;;
+            *)
+                printf '%s\n' "${query_line}"
+                ;;
+        esac
+    done < <("${REAL_QMAKE}" -query)
+else
+    exec "${REAL_QMAKE}" "$@"
+fi
+EOF
+chmod 0755 "${QMAKE_WRAPPER_PATH}"
+
 safe_remove "${APPDIR_PATH}"
 rm -f -- "${OUTPUT_PATH}" "${CHECKSUM_PATH}"
 mkdir -p "${APPDIR_PATH}"
@@ -216,7 +256,9 @@ done
     export APPIMAGE_EXTRACT_AND_RUN=1
     export NO_STRIP=1
     export LINUXDEPLOY_PLUGINS_PATH="${TOOLS_DIR}"
-    export QMAKE="${QMAKE_PATH}"
+    export REAL_QMAKE="${QMAKE_PATH}"
+    export FILTERED_QT_PLUGIN_DIR
+    export QMAKE="${QMAKE_WRAPPER_PATH}"
     export QML_SOURCES_PATHS="${QML_SOURCES_DIR}"
     export EXTRA_QT_MODULES="svg;"
     export EXTRA_PLATFORM_PLUGINS="${WAYLAND_PLUGIN_NAMES}"
