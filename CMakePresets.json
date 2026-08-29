@@ -30,6 +30,18 @@
         "MYSONGPLAYER_BUILD_UI": "OFF",
         "MYSONGPLAYER_WARNINGS_AS_ERRORS": "ON"
       }
+    },
+    {
+      "name": "package-linux",
+      "displayName": "Linux AppImage package (Release)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/package-linux",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "OFF",
+        "MYSONGPLAYER_BUILD_UI": "ON",
+        "MYSONGPLAYER_WARNINGS_AS_ERRORS": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -40,6 +52,10 @@
     {
       "name": "core-only",
       "configurePreset": "core-only"
+    },
+    {
+      "name": "package-linux",
+      "configurePreset": "package-linux"
     }
   ],
   "testPresets": [
