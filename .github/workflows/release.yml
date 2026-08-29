@@ -94,10 +94,15 @@ jobs:
             }
           done
 
-      - name: Bootstrap GCC, CMake, and Ninja
+      - name: Build AppImage with pinned toolchain
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
           tool_dir="/opt/mysongplayer-bootstrap"
+          taglib_dir="$RUNNER_TEMP/taglib-src"
+          taglib_prefix="/opt/mysongplayer-taglib"
+          taglib_archive="$RUNNER_TEMP/taglib-2.3.1.tar.gz"
           mkdir -p "$tool_dir/bin"
 
           gcc-12 --version | head -n1 | grep -Eq 'gcc.* 12\.'
@@ -119,24 +124,11 @@ jobs:
           install -m 0755 "$tool_dir/ninja/ninja" "$tool_dir/bin/ninja"
 
           export PATH="$tool_dir/cmake-3.31.6-linux-x86_64/bin:$tool_dir/bin:$PATH"
+          export CC=gcc-12
+          export CXX=g++-12
           cmake --version | head -n1 | grep -Fx 'cmake version 3.31.6'
           ninja --version | grep -Fx '1.13.2'
-          {
-            echo "PATH=$tool_dir/cmake-3.31.6-linux-x86_64/bin:$tool_dir/bin:$PATH"
-            echo "CC=gcc-12"
-            echo "CXX=g++-12"
-          } >> "$GITHUB_ENV"
 
-      - name: Build and install TagLib 2.3.1
-        run: |
-          set -euo pipefail
-          taglib_dir="$RUNNER_TEMP/taglib-src"
-          taglib_prefix="/opt/mysongplayer-taglib"
-          taglib_archive="$RUNNER_TEMP/taglib-2.3.1.tar.gz"
-          command -v cmake
-          command -v ninja
-          cmake --version | head -n1 | grep -Fx 'cmake version 3.31.6'
-          ninja --version | grep -Fx '1.13.2'
           curl --fail --location --retry 3 --silent --show-error \
             --output "$taglib_archive" \
             https://github.com/taglib/taglib/releases/download/v2.3.1/taglib-2.3.1.tar.gz
@@ -154,21 +146,11 @@ jobs:
           cmake --build "$taglib_dir/build" --parallel
           cmake --install "$taglib_dir/build"
           test -f "$taglib_prefix/lib/pkgconfig/taglib.pc"
-          {
-            echo "TAGLIB_PREFIX=$taglib_prefix"
-            echo "CMAKE_PREFIX_PATH=$taglib_prefix${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
-            echo "PKG_CONFIG_PATH=$taglib_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-            echo "LD_LIBRARY_PATH=$taglib_prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-          } >> "$GITHUB_ENV"
 
-      - name: Build AppImage
-        env:
-          APP_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          set -euo pipefail
-          command -v cmake
-          command -v ninja
-          test -f "$TAGLIB_PREFIX/lib/pkgconfig/taglib.pc"
+          export TAGLIB_PREFIX="$taglib_prefix"
+          export CMAKE_PREFIX_PATH="$taglib_prefix:$QT_ROOT_DIR${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}"
+          export PKG_CONFIG_PATH="$taglib_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+          export LD_LIBRARY_PATH="$taglib_prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
           scripts/build-appimage.sh
 
       - name: Stage exact release assets
