@@ -103,8 +103,7 @@ assets/audio/*
 out/*
 *.AppImage
 
-# Demo and other distribution media belong in GitHub Releases.
-/demoVideo.mp4
-
 # Clangd
 .cache
+
+.verified-resume/
