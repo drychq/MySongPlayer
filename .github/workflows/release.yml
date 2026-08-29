@@ -46,7 +46,7 @@ jobs:
             libxcb-render-util0-dev libxcb-shape0-dev libxcb-shm0-dev \
             libxcb-sync-dev libxcb-xfixes0-dev libxcb-xinerama0-dev \
             libxcb-xkb-dev libxext-dev libxfixes-dev libxi-dev libxkbcommon-dev \
-            libwayland-dev libxrender-dev libxkbcommon-x11-dev p7zip-full \
+            libwayland-dev libxrandr2 libxrender-dev libxkbcommon-x11-dev p7zip-full \
             pkg-config python3 python3-pip unzip wget xz-utils zlib1g-dev
 
       - name: Checkout repository
